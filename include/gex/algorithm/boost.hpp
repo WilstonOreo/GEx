@@ -17,19 +17,16 @@
 
 namespace gex
 {
-  namespace geometry
+  namespace algorithm
   {
-    namespace algorithm
-    {
-      using boost::geometry::difference;
-      using boost::geometry::correct;
-      using boost::geometry::perimeter;
-      using boost::geometry::envelope;
-      using boost::geometry::convex_hull;
-      using boost::geometry::simplify;
-      using boost::geometry::within;
-      using boost::geometry::area;
-      using boost::geometry::disjoint;
-    }
+    using boost::geometry::difference;
+    using boost::geometry::correct;
+    using boost::geometry::perimeter;
+    using boost::geometry::envelope;
+    using boost::geometry::convex_hull;
+    using boost::geometry::simplify;
+    using boost::geometry::within;
+    using boost::geometry::area;
+    using boost::geometry::disjoint;
   }
 }

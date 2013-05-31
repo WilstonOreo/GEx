@@ -10,9 +10,9 @@ namespace gex
   {
     namespace svg
     {
-      struct Color : Color4
+      struct Color : gex::Color4<>
       {
-        typedef Color4 color_type;
+        typedef gex::Color4<> color_type;
 
         static const std::map<std::string,color_type> colormap()
         {
