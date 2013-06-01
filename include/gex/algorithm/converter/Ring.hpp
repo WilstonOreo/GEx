@@ -3,6 +3,7 @@
 #include "Generic.hpp"
 #include "gex/prim.hpp"
 #include "gex/algorithm/unify.hpp"
+#include "gex/algorithm/within.hpp"
 
 namespace gex
 {

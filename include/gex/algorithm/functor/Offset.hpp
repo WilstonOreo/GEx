@@ -1,8 +1,11 @@
 #pragma once
 
+#ifdef GEX_USE_CGAL
 #include "gex/cgal.hpp"
 #include <CGAL/create_offset_polygons_2.h>
 #include <CGAL/create_offset_polygons_from_polygon_with_holes_2.h>
+#endif
+
 #include "gex/algorithm/unify.hpp"
 #include "gex/algorithm/convert.hpp"
 
@@ -13,15 +16,14 @@ namespace gex
       namespace functor
       {
         template<typename PRIMITIVE>
-        struct Offset
-        {
-        };
+        struct Offset {};
 
         template<>
         struct Offset<Ring>
         {
           void operator()(const Ring& _in, MultiPolygon& _out, Scalar _offset)
           {
+#ifdef GEX_USE_CGAL
             auto _cgalPrim = cgal::adapt(_in);
             ///@todo Could replace this with more accurate minkowski sum approach (CGAL sux btw)
             cgal::PolygonPtrVector _offsetPolygons;
@@ -35,6 +37,7 @@ namespace gex
               _offsetPolygons = CGAL::create_interior_skeleton_and_offset_polygons_2(double(_offset),_cgalPrim);
             }
             _out = cgal::adapt(_offsetPolygons);
+#endif
           }
         };
 

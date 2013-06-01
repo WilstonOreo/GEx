@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <boost/geometry/algorithms/convert.hpp>
+#include "gex/algorithm/boost.hpp"
 #include "gex/prim.hpp"
 
 namespace gex

@@ -12,7 +12,9 @@
 #include <boost/geometry/algorithms/correct.hpp>
 #include <boost/geometry/algorithms/envelope.hpp>
 #include <boost/geometry/algorithms/perimeter.hpp>
-
+#include <boost/geometry/algorithms/within.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/algorithms/convert.hpp>
 #include "gex/misc/wrap_boost_geometry_end.hpp"
 
 namespace gex
@@ -25,7 +27,6 @@ namespace gex
     using boost::geometry::envelope;
     using boost::geometry::convex_hull;
     using boost::geometry::simplify;
-    using boost::geometry::within;
     using boost::geometry::area;
     using boost::geometry::disjoint;
   }

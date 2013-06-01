@@ -5,20 +5,10 @@
 
 namespace gex
 {
-    namespace algorithm
+  namespace algorithm
+  {
+    namespace converter
     {
-      namespace converter
-      {
-        template<>
-        struct Converter<std::vector<Segment>,std::vector<Ring>>
-        {
-          
-        };
-
-        GEX_CONVERTER(std::vector<Segment>,MultiPolygon)
-        {
-//          _out = convert<MultiPolygon>(convert<std::vector<Ring>>(_in));
-        };
-      }
     }
   }
+}

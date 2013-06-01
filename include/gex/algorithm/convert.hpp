@@ -3,7 +3,6 @@
 #include "converter/Segment.hpp"
 #include "converter/Bounds.hpp"
 #include "converter/LineString.hpp"
-#include "converter/Ring.hpp"
 #include "converter/Polygon.hpp"
 
 namespace gex

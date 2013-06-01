@@ -76,32 +76,6 @@ namespace gex
           }
         }
 
-        /** @brief Test if the given point is inside bounds
-         * @param _that point to check
-         * @return true if point was inside and false otherwise
-         * @attention assertion when this is not valid
-         */
-        bool inside(const point_type& _that) const
-        {
-          GEX_ASSERT(valid());
-          GEX_FOREACH_DIM(i)
-          {
-            if (_that[i] < min_[i] || _that[i] > max_[i])
-              return false;
-          }
-          return true;
-        }
-
-        friend bool inside(const Bounds& _first, const Bounds& _second)
-        {
-          GEX_FOREACH_DIM(i)
-          {
-            if (_first.min_[i] < _second.min_[i] ||
-                _first.max_[i] > _second.max_[i]) return false;
-          }
-          return true;
-        }
-
         /** @brief Return axis with largest extent
          * @return axis with largest extent
          */

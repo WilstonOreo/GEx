@@ -1,8 +1,11 @@
 #pragma once
 
 #include "gex/prim.hpp"
+
+#ifdef GEX_USE_CGAL
 #include "gex/cgal.hpp"
 #include <CGAL/create_straight_skeleton_2.h>
+#endif
 
 namespace gex
 {
@@ -24,6 +27,7 @@ namespace gex
         template<>
         struct Skeleton<Ring>
         {
+#ifdef GEX_USE_CGAL
           void operator()(const Ring& _ring, StraightSkeleton& _skeleton)
           {
             auto _cgalRing = cgal::adapt(_ring);
@@ -36,6 +40,7 @@ namespace gex
            //   _skeleton.vertices().push_back(*it);
             }
           }
+#endif
         };
 
         template<>
