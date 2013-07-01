@@ -138,7 +138,7 @@ namespace gex
           return proj_bounds_type(min().project(_z),max().project(_z));
         }
 
-        exp_bounds_type expand(Axis _z, const range_type& _range)
+        exp_bounds_type expand(Axis _z, const range_type& _range) const
         {
           return exp_bounds_type(min().expand(_z,_range.min()),
                                  max().expand(_z,_range.max()));

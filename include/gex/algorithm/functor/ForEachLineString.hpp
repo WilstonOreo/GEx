@@ -18,7 +18,7 @@ namespace gex
           template<typename FUNCTOR>
           void operator()(primitive_type& _p, FUNCTOR _f) const
           {
-            ForEachRing<PRIMITIVE>()(_p,[](Ring& _ring) 
+            ForEachRing<PRIMITIVE>()(_p,[&](Ring& _ring) 
             {
               _f(algorithm::converter::convert<prim::LineString<model_type>>(_ring));
             });
@@ -27,7 +27,7 @@ namespace gex
           template<typename FUNCTOR>
           void operator()(const primitive_type& _p, FUNCTOR _f) const
           {
-            ForEachRing<PRIMITIVE>()(_p,[](const Ring& _ring) 
+            ForEachRing<PRIMITIVE>()(_p,[&](const Ring& _ring) 
             {
               _f(algorithm::converter::convert<prim::LineString<model_type>>(_ring));
             });

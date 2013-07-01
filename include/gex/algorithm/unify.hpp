@@ -7,9 +7,13 @@ namespace gex
 {
     namespace algorithm
     {
+      template<
+        typename PRIMITIVES, 
+        typename UNION = Union<
+          typename PRIMITIVES::value_type,
+          typename PRIMITIVES::value_type>>
       struct Unify
       {
-        template<typename PRIMITIVES>
         void operator()(const PRIMITIVES& _in, PRIMITIVES& _out)
         {
           typedef typename PRIMITIVES::value_type primitive_type;
@@ -24,7 +28,8 @@ namespace gex
             {
               if (!(i->bounds() && j->bounds())) continue;
 
-              auto&& _newPrimitives = *i | *j;
+              PRIMITIVES _newPrimitives;
+              UNION()(*i,*j,_newPrimitives);
               if (_newPrimitives.size() == 1)
               {
                 _newPrimitives.back().update();
@@ -41,14 +46,14 @@ namespace gex
       template<typename PRIMITIVES>
       void unify(const PRIMITIVES& _input, PRIMITIVES& _output)
       {
-        Unify()(_input,_output);
+        Unify<PRIMITIVES>()(_input,_output);
       }
 
       template<typename PRIMITIVES>
       PRIMITIVES unify(const PRIMITIVES& _input)
       {
         PRIMITIVES _output;
-        Unify()(_input,_output);
+        Unify<PRIMITIVES>()(_input,_output);
         return _output;
       }
     }

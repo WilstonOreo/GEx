@@ -2,13 +2,28 @@
 
 #include "functor/ForEachRing.hpp"
 #include "functor/ForEachLineString.hpp"
+#include "functor/ForEachPoint.hpp"
 
 namespace gex
 {
   namespace algorithm
     {
       using boost::geometry::for_each_segment;
-      using boost::geometry::for_each_point;
+      //using boost::geometry::for_each_point;
+
+      using functor::ForEachPoint;
+
+      template<typename PRIMITIVE, typename FUNCTOR>
+      void for_each_point(const PRIMITIVE& _primitive, FUNCTOR f)
+      {
+        ForEachPoint<PRIMITIVE>()(_primitive,f);
+      }
+      
+      template<typename PRIMITIVE, typename FUNCTOR>
+      void for_each_point(PRIMITIVE& _primitive, FUNCTOR f)
+      {
+        ForEachPoint<PRIMITIVE>()(_primitive,f);
+      }
 
       using functor::ForEachRing;
 

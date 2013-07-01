@@ -8,7 +8,7 @@ namespace gex
     namespace algorithm
     {
       template<typename A, typename B>
-      struct UnionType {};
+      struct UnionType { typedef A type; };
 
 #define GEX_GEOMETRY_UNION_TYPE(a,b,i) \
       template<> struct UnionType<a,b> { typedef i type; };
@@ -40,6 +40,17 @@ namespace gex
           }
         }
       }; 
+
+      template<typename SCALAR>
+      struct Union<base::Range<SCALAR>,base::Range<SCALAR>>
+      {
+        typedef base::Range<SCALAR> range_type;
+
+        void operator()(const range_type& _a, const range_type& _b, range_type& _i)
+        {
+          _i(std::min(_a.min(),_b.min()),std::max(_a.max(),_b.max()));
+        }
+      };
 
       template<typename A, typename B, typename I>
       void union_(const A& _a, const B& _b, I& _i)

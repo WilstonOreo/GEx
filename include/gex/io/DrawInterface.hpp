@@ -10,7 +10,7 @@ namespace gex
     template<template<class> class DRAW_FUNCTOR, typename BUFFER>
     struct DrawInterface
     {
-      DrawInterface(int _width, int _height)
+      DrawInterface(int _width = 0, int _height = 0)
       {
         clear(_width,_height);
       }

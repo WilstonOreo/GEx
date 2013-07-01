@@ -35,6 +35,34 @@ namespace gex
         }
       };
 
+      template<typename SCALAR>
+      struct Intersects<
+        base::Range<SCALAR>,
+        base::Range<SCALAR>>
+      {
+        typedef base::Range<SCALAR> range_type;
+
+        bool operator()(const range_type& _a, const range_type& _b)
+        {
+          return (_a.min() >= _b.max() ||
+                _a.max() <= _b.min());
+        }
+      };
+
+      template<typename SCALAR>
+      struct Intersects<
+        SCALAR, base::Range<SCALAR>>
+      {
+        typedef SCALAR scalar_type;
+        typedef base::Range<scalar_type> range_type;
+
+        bool operator()(const scalar_type& _a, const range_type& _b)
+        {
+          return _a >= _b.min() && _a < _b.max();
+        }
+      };
+
+
       template<typename A, typename B>
       bool intersects(const A& _a, const B& _b)
       {
