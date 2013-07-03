@@ -39,7 +39,7 @@ namespace gex
 
           excluded_.insert(&_primitive);
 
-          std::cout << excluded_.size() << " " << primitives_.size() << std::endl;
+//          std::cout << excluded_.size() << " " << primitives_.size() << std::endl;
 
 for (const auto& p: primitives_)
           {

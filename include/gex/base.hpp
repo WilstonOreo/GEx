@@ -3,10 +3,6 @@
 #include "gex/misc.hpp"
 #include "algorithm/boost.hpp"
 
-#ifdef GEX_USE_CGAL
-#include "cgal.hpp"
-#endif
-
 #include "base/Model.hpp"
 #include "base/Packet.hpp"
 #include "base/Coords.hpp"
