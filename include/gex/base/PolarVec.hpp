@@ -1,6 +1,9 @@
 #ifndef _POLARVEC_HPP
 #define _POLARVEC_HPP
 
+#include "Model.hpp"
+#include "Vec.hpp"
+
 namespace gex
 {
     namespace base
@@ -100,6 +103,7 @@ namespace gex
         {
           return operator Vec();
         }
+
 
         Coord x() const
         {

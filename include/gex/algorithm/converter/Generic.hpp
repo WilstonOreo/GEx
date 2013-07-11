@@ -49,15 +49,6 @@ namespace gex
         return _out;
       }
 
-
-#define GEX_CONVERTER(in,out)\
-        template<>\
-        struct Converter<in,out>\
-        {\
-          void operator()(const in& _in, out& _out);\
-        };\
-        void Converter<in,out>::operator()(const in& _in, out& _out)
-
       template<typename IN, typename OUT>
       struct Converter<std::vector<IN>,std::vector<OUT>>
       {

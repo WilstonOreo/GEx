@@ -1,5 +1,6 @@
 #pragma once
 
+#include <tbd/seq_op.h>
 #include "Ring.hpp"
 #include "gex/algorithm/for_each.hpp"
 
@@ -9,75 +10,138 @@ namespace gex
   {
     namespace converter
     {
-      GEX_CONVERTER(Polygon,std::vector<Point2>)
+      /// Converts a polygon to points
+      template<typename MODEL>
+      struct Converter<prim::Polygon<MODEL>,std::vector<typename prim::Polygon<MODEL>::point_type>>
       {
-        for_each_ring(_in,[&](const Ring& r)
+        typedef prim::Polygon<MODEL> polygon_type;
+        typedef std::vector<typename polygon_type::point_type> points_type;
+        
+        void operator()(const polygon_type& _in, points_type& _out)
         {
-          std::vector<Point2>&& _points = convert<std::vector<Point2>>(r);
-          _out.insert(_out.end(),_points.begin(),_points.end());
-        });
-      }
-
-      GEX_CONVERTER(Polygon,std::vector<Segment>)
-      {
-        for_each_ring(_in,[&](const Ring& r)
-        {
-          std::vector<Segment>&& _ringSegments = convert<std::vector<Segment>>(r);
-          _out.insert(_out.end(),_ringSegments.begin(),_ringSegments.end());
-        });
-      }
-
-      GEX_CONVERTER(Polygon,std::vector<Ring>)
-      {
-        for_each_ring(_in,[&](const Ring& r)
-        {
-          _out.push_back(r);
-        });
-      }
-
-      GEX_CONVERTER(Polygon,MultiLineString)
-      {
-        _out.clear();
-        for_each_ring(_in,[&](const Ring& r)
-        {
-          _out.push_back(convert<LineString>(r));
-        });
-      }
-
-      GEX_CONVERTER(MultiPolygon,std::vector<Ring>)
-      {
-        for_each_ring(_in,[&](const Ring& r)
-        {
-          _out.push_back(r);
-        });
-      }
-
-      GEX_CONVERTER(MultiPolygon,std::vector<Segment>)
-      {
-        for_each_ring(_in,[&](const Ring& r)
-        {
-          std::vector<Segment>&& _ringSegments = convert<std::vector<Segment>>(r);
-          _out.insert(_out.end(),_ringSegments.begin(),_ringSegments.end());
-        });
-      }
-
-      GEX_CONVERTER(MultiPolygon,std::vector<Point2>)
-      {
-        for_each_ring(_in,[&](const Ring& r)
-        {
-          std::vector<Point2>&& _points = convert<std::vector<Point2>>(r);
-          _out.insert(_out.end(),_points.begin(),_points.end());
-        });
-      }
-
-      GEX_CONVERTER(MultiPolygon,MultiLineString)
-      {
-for (auto& _p : _in)
-        {
-          auto&& _multiLineString = convert<MultiLineString>(_p);
-          _out.insert(_out.end(),_multiLineString.begin(),_multiLineString.end());
+          for_each_ring(_in,[&](const typename polygon_type::ring_type& r)
+          {
+            using tbd::seq_op::operator+=;
+            _out += convert<points_type>(r);
+          });
         }
-      }
+      };
+
+
+      /// Converts a polygon to segments
+      template<typename MODEL>
+      struct Converter<prim::Polygon<MODEL>,std::vector<prim::Segment<MODEL>>>
+      {
+        typedef prim::Polygon<MODEL> polygon_type;
+        typedef std::vector<prim::Segment<MODEL>> segments_type;
+
+        void operator()(const polygon_type& _in, segments_type& _out)
+        {
+          for_each_ring(_in,[&](const typename polygon_type::ring_type& r)
+          {
+            using tbd::seq_op::operator+=;
+            _out += convert<segments_type>(r);
+          });
+        }
+      };
+
+      /// Convert a polygon to rings
+      template<typename MODEL>
+      struct Converter<prim::Polygon<MODEL>,std::vector<prim::Ring<MODEL>>>
+      {
+        typedef prim::Polygon<MODEL> polygon_type;
+        typedef std::vector<prim::Ring<MODEL>> rings_type;
+
+        void operator()(const polygon_type& _in, rings_type& _out)
+        {
+          for_each_ring(_in,[&](const typename polygon_type::ring_type& r)
+          {
+            _out.push_back(r);
+          });
+        }
+      };
+
+      /// Convert a polygon to line strings
+      template<typename MODEL>
+      struct Converter<prim::Polygon<MODEL>,prim::MultiLineString<MODEL>>
+      {
+        typedef prim::Polygon<MODEL> polygon_type;
+        typedef prim::MultiPolygon<MODEL> multipolygon_type;
+
+        void operator()(const polygon_type& _in, multipolygon_type& _out)
+        {
+          for_each_ring(_in,[&](const typename polygon_type::ring_type& r)
+          {
+            _out.push_back(convert<prim::LineString<MODEL>>(r));
+          });
+        }
+      };
+
+      /// Convert a multi polygon to rings
+      template<typename MODEL>
+      struct Converter<prim::MultiPolygon<MODEL>,std::vector<prim::Ring<MODEL>>>
+      {
+        typedef prim::MultiPolygon<MODEL> multipolygon_type;
+        typedef std::vector<prim::Ring<MODEL>> rings_type;
+
+        void operator()(const multipolygon_type& _in, rings_type& _out)
+        {
+          for_each_ring(_in,[&](const typename multipolygon_type::ring_type& r)
+          {
+            _out.push_back(r);
+          });
+        }
+      };
+
+      template<typename MODEL>
+      struct Converter<prim::MultiPolygon<MODEL>,std::vector<prim::Segment<MODEL>>>
+      {
+        typedef prim::MultiPolygon<MODEL> multipolygon_type;
+        typedef std::vector<prim::Segment<MODEL>> segments_type;
+
+        void operator()(const multipolygon_type& _in, segments_type& _out)
+        {
+          for_each_ring(_in,[&](const typename multipolygon_type::ring_type& r)
+          {
+            using tbd::seq_op::operator+=;
+            _out += convert<segments_type>(r);
+          });
+        }
+      };
+
+      /// Converts a polygon to points
+      template<typename MODEL>
+      struct Converter<prim::MultiPolygon<MODEL>,std::vector<typename prim::MultiPolygon<MODEL>::point_type>>
+      {
+        typedef prim::MultiPolygon<MODEL> multipolygon_type;
+        typedef std::vector<typename multipolygon_type::point_type> points_type;
+        
+        void operator()(const multipolygon_type& _in, points_type& _out)
+        {
+          for_each_ring(_in,[&](const typename multipolygon_type::ring_type& r)
+          {
+            using tbd::seq_op::operator+=;
+            _out += convert<points_type>(r);
+          });
+        }
+      };
+
+      /// Converts a polygon to a multilinestring
+      template<typename MODEL>
+      struct Converter<prim::MultiPolygon<MODEL>,prim::MultiLineString<MODEL>>
+      {
+        typedef prim::MultiPolygon<MODEL> multipolygon_type;
+        typedef prim::MultiLineString<MODEL> multilinestring_type;
+
+        void operator()(const multipolygon_type& _in, multilinestring_type& _out)
+        {
+          for (auto& _p : _in)
+          {
+            using tbd::seq_op::operator+=;
+            _out += convert<multilinestring_type>(_p);
+          }
+        }
+      };
     }
   }
 }

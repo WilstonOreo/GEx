@@ -52,6 +52,13 @@ namespace gex
         return v;
       }
 
+      vector_type vec() const
+      {
+        vector_type _v;
+        GEX_FOREACH_DIM(i) _v[i] = Point::a_[i];
+        return _v;
+      }
+
       friend Point operator+( const Point& a, const Point& b)
       {
         Point p;
@@ -115,6 +122,24 @@ namespace gex
           _dim++;
         }
         return _expPoint;
+      }
+
+      friend std::ostream& operator<<(std::ostream& _os, const Point& _p)
+      {
+        return _p.format(_os);
+      }
+
+      friend std::istream& operator>>(std::istream& _is, Point& _p)
+      {
+        std::vector<std::string> _tokens;
+        tbd::parse(_is,_tokens,"(",")",",",1);
+        if (_tokens.size() != _p.size()) return _is;
+        GEX_FOREACH_DIM(i) 
+        {
+          std::stringstream _iss(_tokens[i]);
+          _iss >> _p[i];
+        }
+        return _is;
       }
     };
   }

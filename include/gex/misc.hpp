@@ -1,7 +1,11 @@
 #pragma once
 
-#include "tbd/property.h"
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include <tbd/property.h>
+#include <tbd/parse_utils.h>
 #include <limits>
+#include <iostream>
 
 #include "misc/assert.hpp"
 
@@ -36,6 +40,9 @@ namespace gex
       return T(rand())/T(RAND_MAX);
     }
   }
+
+  using misc::deg2rad;
+  using misc::rad2deg;
 }
 
 

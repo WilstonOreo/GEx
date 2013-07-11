@@ -22,6 +22,7 @@ namespace gex
       GEX_INTERSECTION_TYPE(MultiPolygon,Ring,MultiPolygon)
       GEX_INTERSECTION_TYPE(MultiPolygon,Polygon,MultiPolygon)
       GEX_INTERSECTION_TYPE(MultiPolygon,MultiPolygon,MultiPolygon)
+      GEX_INTERSECTION_TYPE(Range,Range,Range)
 
       GEX_INTERSECTION_TYPE(OrthogonalPlane<X>,Triangle,Segment)
       GEX_INTERSECTION_TYPE(OrthogonalPlane<Y>,Triangle,Segment)
@@ -69,6 +70,18 @@ namespace gex
         }
       };
 
+      template<typename SCALAR>
+      struct Intersection<base::Range<SCALAR>,base::Range<SCALAR>>
+      {
+        typedef base::Range<SCALAR> range_type;
+
+        void operator()(const range_type& _a, const range_type& _b, range_type& _i)
+        {
+          _i.min(std::max(_a.min(),_b.min()));
+          _i.max(std::min(_a.max(),_b.max()));
+        }
+      };
+      
       template<typename A, typename B, typename I>
       void intersection(const A& _a, const B& _b, I& _i)
       {

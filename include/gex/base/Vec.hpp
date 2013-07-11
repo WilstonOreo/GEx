@@ -32,7 +32,7 @@ namespace gex
         {
           GEX_FOREACH_DIM(i)
           {
-            this->a_[i] = _p[i]; 
+            this->a_[i] = Vec(_p)[i]; 
           }
         }
 

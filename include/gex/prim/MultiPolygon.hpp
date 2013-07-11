@@ -13,8 +13,10 @@ namespace gex
        {
         GEX_PRIMITIVE(MODEL)
 
-        typedef std::vector<Polygon<MODEL>> ctnr_type;
-        typedef typename ctnr_type::size_type size_type;
+        typedef Polygon<MODEL> polygon_type;
+        typedef typename polygon_type::ring_type ring_type;
+        typedef std::vector<polygon_type> container_type;
+        typedef typename container_type::size_type size_type;
 
         MultiPolygon() :
           correct_(false)
@@ -25,6 +27,34 @@ namespace gex
           correct_(false)
         {
           assign(_t.begin(),_t.end());
+        }
+
+        using container_type::empty;
+        using container_type::size;
+        typedef typename container_type::iterator iterator;
+        typedef typename container_type::const_iterator const_iterator;
+
+        const_iterator begin() const
+        {
+          return container_type::begin();
+        }
+
+        const_iterator end() const
+        {
+          return container_type::end();
+        }
+
+
+        iterator begin()
+        {
+          correct_ = false;
+          return container_type::begin();
+        }
+
+        iterator end()
+        {
+          correct_ = false;
+          return container_type::end();
         }
 
         /// universal assign
@@ -38,7 +68,7 @@ namespace gex
         void push_back(const Polygon<MODEL>& _polygon)
         {
           correct_ = false;
-          ctnr_type::push_back(_polygon);
+          container_type::push_back(_polygon);
         }
 
         void update()
@@ -54,13 +84,6 @@ namespace gex
           bounds_=_bounds;
         }
 
-        const size_type countPoints()
-        {
-          size_type _count=0;
-          for ( auto& _p : *this)
-            _count += _p.points();
-          return _count;
-        }
 
         TBD_PROPERTY_RO(bool,correct)
         TBD_PROPERTY_REF_RO(bounds_type,bounds)

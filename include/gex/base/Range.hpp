@@ -55,6 +55,20 @@ namespace gex
           return _os;
         }
 
+        void operator+=(scalar_type _r)
+        {
+          min_ += _r;
+          max_ += _r;
+        }
+
+        friend Range operator+(const Range& _l, scalar_type _r)
+        {
+          Range _range = _l;
+          _range += _r;
+          return _range;
+        }
+        
+
         TBD_PROPERTY_REF_MON(scalar_type,min,validate)
         TBD_PROPERTY_REF_MON(scalar_type,max,validate)
       };

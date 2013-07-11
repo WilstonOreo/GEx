@@ -48,6 +48,15 @@ namespace gex
         {
           operator()(_min,_max);
         }
+        
+        /** @brief Initialize bounds by two opposite corner points
+         * @param _min minimum coordinate
+         * @param _max maximum coordinate
+         */
+        Bounds(point_type&& _min, point_type&& _max)
+        {
+          operator()(_min,_max);
+        }
 
         /** @brief Extend this bounds so that it includes the given bounds
          * @param _that Bounds to include
@@ -127,7 +136,17 @@ namespace gex
         {
           return range_type(min_[_axis],max_[_axis]);
         }
-
+        
+        void range(Axis _axis, const scalar_type& _min, const scalar_type& _max) 
+        {
+          min_[_axis] = _min;
+          max_[_axis] = _max;
+        }
+        
+        void range(Axis _axis, const range_type& _range) 
+        {
+          range(_axis,_range.min(),_range.max());
+        }
 
         typedef Bounds<Model<dimensions()-1,scalar_type>> proj_bounds_type;
         typedef Bounds<Model<dimensions()+1,scalar_type>> exp_bounds_type;
@@ -153,7 +172,7 @@ namespace gex
         }
         /** @brief Return center of this bounds
          * @return center as point
-         */
+          */
         const point_type center() const
         {
           return 0.5*(max_.vec() + min_.vec());
@@ -220,11 +239,22 @@ namespace gex
           return Bounds(_min,_max);
         }
 
-        template<class ARCHIVE>
-        void serialize( ARCHIVE& _ar, const unsigned int _fileVersion )
+        friend std::istream& operator>>(std::istream& _is, Bounds& _b)
         {
-          _ar & min_;
-          _ar & max_;
+          std::vector<std::string> _tokens;
+          tbd::parse(_is,_tokens,"[(",")]",",",1);
+          if (_tokens.size() != 2) return _is;
+          std::stringstream _minStr(_tokens[0]),
+                            _maxStr(_tokens[1]);
+          _minStr >> _b.min();
+          _maxStr >> _b.max();
+          return _is;
+        }
+
+        friend std::ostream& operator<<(std::ostream& _os, const Bounds& _b)
+        {
+          _os << '[' << _b.min() << ',' << _b.max() << ']';
+          return _os;
         }
 
         TBD_PROPERTY_REF_MON(point_type,min,validate)

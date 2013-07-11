@@ -7,7 +7,9 @@ namespace gex
 {
   namespace io
   {
-    bool read(const std::string& _path, TriangleMesh& _mesh)
+    /// Read a mesh from file
+    template<typename PATH, typename SCALAR>
+    bool read(const PATH& _path, comp::TriangleMesh<SCALAR>& _mesh)
     {
       if (!STL()(_path,_mesh.triangles())) return false;
       _mesh.update();

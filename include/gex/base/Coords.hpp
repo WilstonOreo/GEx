@@ -169,7 +169,7 @@ for (auto& _a : a_) _a = 0;
 
       Coords vectorize(const scalar_type& _s)
       {
-for (auto& _a : a_)
+        for (auto& _a : a_)
           _a = _s;
         return *this;
       }
@@ -185,7 +185,7 @@ for (auto& _a : a_)
       inline OSTREAM& format( OSTREAM& _s ) const
       {
         bool _f=true;
-for( auto& _c : data() )
+        for( auto& _c : data() )
         {
           if( _f )
           {
@@ -198,6 +198,25 @@ for( auto& _c : data() )
         _s << ")";
         return _s;
       }
+
+      friend std::ostream& operator<<(std::ostream& _os, const Coords& _c)
+      {
+        return _c.format(_os);
+      }
+
+      friend std::istream& operator>>(std::istream& _is, Coords& _c)
+      {
+        std::vector<std::string> _tokens;
+        tbd::parse(_is,_tokens,"(",")",",",1);
+        if (_tokens.size() != _c.size()) return _is;
+        GEX_FOREACH_DIM(i) 
+        {
+          std::stringstream _iss(_tokens[i]);
+          _iss >> _c[i];
+        }
+        return _is;
+      }
+
 
       friend bool operator == ( const Coords& _a, const Coords& _b)
       {

@@ -3,14 +3,11 @@
 #include "gex/misc.hpp"
 #include "algorithm/boost.hpp"
 
-#ifdef GEX_USE_CGAL
-#include "cgal.hpp"
-#endif
-
 #include "base/Model.hpp"
 #include "base/Packet.hpp"
 #include "base/Coords.hpp"
 #include "base/Vec.hpp"
+#include "base/PolarVec.hpp"
 #include "base/Point.hpp"
 #include "base/Bounds.hpp"
 #include "base/Matrix.hpp"
@@ -63,10 +60,17 @@ namespace gex
 
 BOOST_GEOMETRY_REGISTER_POINT_2D_GET_SET(
   gex::Point2,gex::Scalar,cs::cartesian,x,y,x,y)
+BOOST_GEOMETRY_REGISTER_POINT_3D_GET_SET(
+  gex::Point3,gex::Scalar,cs::cartesian,x,y,z,x,y,z)
 
 #include <boost/geometry/geometries/register/box.hpp>
 
 BOOST_GEOMETRY_REGISTER_BOX(
   gex::Bounds2,
   gex::Point2,
+  min(),max())
+
+BOOST_GEOMETRY_REGISTER_BOX(
+  gex::Bounds3,
+  gex::Point3,
   min(),max())
