@@ -29,7 +29,7 @@ namespace gex
       /// Base constructor, all values are initially set to zero
       Coords()
       {
-for (auto& _a : a_) _a = 0;
+        for (auto& _a : a_) _a = 0;
       }
       Coords( Coords& _coords )
       {
@@ -96,49 +96,24 @@ for (auto& _a : a_) _a = 0;
       }
 
 
-      /// Methods to return coordinate values
-      inline scalar_type x() const
-      {
-        BOOST_STATIC_ASSERT(dimensions() >= 1);
-        return a_[0];
-      }
-      inline scalar_type y() const
-      {
-        BOOST_STATIC_ASSERT(dimensions() >= 2);
-        return a_[1];
-      }
-      inline scalar_type z() const
-      {
-        BOOST_STATIC_ASSERT(dimensions() >= 3);
-        return a_[2];
-      }
-      inline scalar_type w() const
-      {
-        BOOST_STATIC_ASSERT(dimensions() >= 4);
-        return a_[3];
+#define GEX_SCALAR_REF(name,index) \
+      inline scalar_type const& name() const\
+      {\
+        checkIndex<index>(); return a_[index];\
+      }\
+      inline scalar_type& name()\
+      {\
+        checkIndex<index>(); return a_[index];\
+      }\
+      inline void name(const scalar_type& _##name)\
+      {\
+        checkIndex<index>(); a_[index] = _##name;\
       }
 
-      /// Methods to set coordinate values
-      inline void x(const scalar_type _x)
-      {
-        BOOST_STATIC_ASSERT(dimensions() >= 1);
-        a_[0] = _x;
-      }
-      inline void y(const scalar_type _y)
-      {
-        BOOST_STATIC_ASSERT(dimensions() >= 2);
-        a_[1] = _y;
-      }
-      inline void z(const scalar_type _z)
-      {
-        BOOST_STATIC_ASSERT(dimensions() >= 3);
-        a_[2] = _z;
-      }
-      inline void w(const scalar_type _w)
-      {
-        BOOST_STATIC_ASSERT(dimensions() >= 4);
-        a_[3] = _w;
-      }
+      GEX_SCALAR_REF(x,0)
+      GEX_SCALAR_REF(y,1)
+      GEX_SCALAR_REF(z,2)
+      GEX_SCALAR_REF(w,3)
 
       /// Methods to access coordinate value in a certain dimension
       scalar_type& operator[] (size_t i)
@@ -150,11 +125,12 @@ for (auto& _a : a_) _a = 0;
         return a_[i];
       }
 
-      void operator += ( const Coords _c )
+      void operator += ( const Coords& _c )
       {
         GEX_FOREACH_DIM(i) a_[i] += _c[i];
       }
-      void operator -= ( const Coords _c )
+
+      void operator -= ( const Coords& _c )
       {
         GEX_FOREACH_DIM(i) a_[i] -= _c[i];
       }
@@ -230,6 +206,11 @@ for (auto& _a : a_) _a = 0;
       }
 
     protected:
+      template<size_t INDEX>
+      static void checkIndex()
+      {
+        static_assert(dimensions() > INDEX,"Number of dimension must be larger than coordinate index");
+      }
       /// Array to store coordinate values
       array_type a_;
     };

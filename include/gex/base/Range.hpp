@@ -12,8 +12,13 @@ namespace gex
       {
         typedef SCALAR scalar_type;
 
-        Range(scalar_type _min = -misc::inf<scalar_type>(),
-              scalar_type _max = misc::inf<scalar_type>()) : 
+        Range() :
+          min_(misc::inf<scalar_type>()),
+          max_(-misc::inf<scalar_type>())
+        {
+        }
+
+        Range(scalar_type _min, scalar_type _max) : 
           min_(_min), max_(_max)
         {
           validate();
@@ -60,11 +65,30 @@ namespace gex
           min_ += _r;
           max_ += _r;
         }
+        
+        void operator-=(scalar_type _r)
+        {
+          min_ -= _r;
+          max_ -= _r;
+        }
+
+        void extend(const Range& _range)
+        {
+          min_ = std::min(min_,_range.min());
+          max_ = std::max(max_,_range.max());
+        }
 
         friend Range operator+(const Range& _l, scalar_type _r)
         {
           Range _range = _l;
           _range += _r;
+          return _range;
+        }
+        
+        friend Range operator-(const Range& _l, scalar_type _r)
+        {
+          Range _range = _l;
+          _range -= _r;
           return _range;
         }
         

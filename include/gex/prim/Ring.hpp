@@ -20,6 +20,20 @@ namespace gex
         enum Orientation : unsigned char { CW , CCW };
         typedef std::vector<point_type> ctnr_type;
 
+        template<typename BEGIN, typename END>
+
+        Ring(BEGIN _begin, END _end) : 
+          correct_(false),
+          length_(0.0),
+          area_(0.0)
+        {
+          this->reserve(_end - _begin);
+          std::for_each(_begin,_end,[&](const point_type& _point)
+          {
+            push_back(_point);
+          });
+        }
+
         /// Default constructor
         Ring(Location _location = OUTER) :
           location_(_location),

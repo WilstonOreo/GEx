@@ -28,11 +28,11 @@ namespace gex
         Vec( scalar_type _x, scalar_type _y, scalar_type _z, scalar_type _w ) : coords_type(_x,_y,_z,_w) { }
 
         template<typename POINT>
-        Vec(POINT _p)
+        Vec(const POINT& _p)
         {
           GEX_FOREACH_DIM(i)
           {
-            this->a_[i] = Vec(_p)[i]; 
+            this->a_[i] = _p[i]; 
           }
         }
 
@@ -154,6 +154,13 @@ namespace gex
             }
         */
       };
+
+      typedef Vec<Model<2,double>> Vec2d;
+      typedef Vec<Model<3,double>> Vec3d;
+      typedef Vec<Model<2,float>> Vec2f;
+      typedef Vec<Model<3,float>> Vec3f;
+      typedef Vec<Model<2,int>> Vec2i;
+      typedef Vec<Model<3,int>> Vec3i;
     }
   }
 #endif /* _VEC_HPP */

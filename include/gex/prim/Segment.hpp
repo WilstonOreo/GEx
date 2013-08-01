@@ -35,7 +35,7 @@ namespace gex
         }
 
         /// Methods to access coordinate value in a certain dimension
-        point_type& operator[] (int i)
+        point_type& operator[] (size_t i)
         {
           GEX_ASSERT(i < 2);
           return p_[i];

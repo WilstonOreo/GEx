@@ -1,57 +1,24 @@
 #pragma once
 
-#include "functor/ForEachRing.hpp"
-#include "functor/ForEachLineString.hpp"
-#include "functor/ForEachPoint.hpp"
+#include "functor/ForEach.hpp"
 
 namespace gex
 {
   namespace algorithm
+  {
+    using functor::ForEach;
+
+    template<typename SUB_PRIMITIVE, typename PRIMITIVE, typename FUNCTOR>
+    void for_each(const PRIMITIVE& _primitive, FUNCTOR f)
     {
-      using boost::geometry::for_each_segment;
-      //using boost::geometry::for_each_point;
+      ForEach<SUB_PRIMITIVE,true>()(_primitive,f);
+    }
 
-      using functor::ForEachPoint;
-
-      template<typename PRIMITIVE, typename FUNCTOR>
-      void for_each_point(const PRIMITIVE& _primitive, FUNCTOR f)
-      {
-        ForEachPoint<PRIMITIVE>()(_primitive,f);
-      }
-      
-      template<typename PRIMITIVE, typename FUNCTOR>
-      void for_each_point(PRIMITIVE& _primitive, FUNCTOR f)
-      {
-        ForEachPoint<PRIMITIVE>()(_primitive,f);
-      }
-
-      using functor::ForEachRing;
-
-      template<typename PRIMITIVE, typename FUNCTOR>
-      void for_each_ring(const PRIMITIVE& _primitive, FUNCTOR f)
-      {
-        ForEachRing<PRIMITIVE>()(_primitive,f);
-      }
-
-      template<typename PRIMITIVE, typename FUNCTOR>
-      void for_each_ring(PRIMITIVE& _primitive, FUNCTOR f)
-      {
-        ForEachRing<PRIMITIVE>()(_primitive,f);
-      }
-
-      using functor::ForEachLineString;
-
-      template<typename PRIMITIVE, typename FUNCTOR>
-      void for_each_linestring(const PRIMITIVE& _primitive, FUNCTOR f)
-      {
-        ForEachLineString<PRIMITIVE>()(_primitive,f);
-      }
-
-      template<typename PRIMITIVE, typename FUNCTOR>
-      void for_each_linestring(PRIMITIVE& _primitive, FUNCTOR f)
-      {
-        ForEachLineString<PRIMITIVE>()(_primitive,f);
-      }
+    template<typename SUB_PRIMITIVE, typename PRIMITIVE, typename FUNCTOR>
+    void for_each(PRIMITIVE& _primitive, FUNCTOR f)
+    {
+      ForEach<SUB_PRIMITIVE,false>()(_primitive,f);
     }
   }
+}
 

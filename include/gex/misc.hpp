@@ -9,6 +9,7 @@
 
 #include "misc/assert.hpp"
 
+
 namespace gex
 {
   namespace misc
@@ -43,6 +44,8 @@ namespace gex
 
   using misc::deg2rad;
   using misc::rad2deg;
+  using misc::rnd;
+  using misc::inf;
 }
 
 

@@ -15,6 +15,7 @@
 #include <boost/geometry/algorithms/within.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/algorithms/convert.hpp>
+#include <boost/geometry/algorithms/num_points.hpp>
 #include "gex/misc/wrap_boost_geometry_end.hpp"
 
 namespace gex
@@ -29,5 +30,6 @@ namespace gex
     using boost::geometry::simplify;
     using boost::geometry::area;
     using boost::geometry::disjoint;
+    using boost::geometry::num_points;
   }
 }

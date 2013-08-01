@@ -28,7 +28,7 @@ namespace gex
 
         void operator += (const Shape& _s)
         {
-          buffer_.push_back(_s);
+          buffer_.push_back(_s.str());
         }
 
         /// Blackens the image and resizes it if given dimensions are != 0
@@ -47,6 +47,17 @@ namespace gex
           }
         }
 
+        template<typename POS, typename TEXT>
+        void text(const POS& _pos, const TEXT& _text, const Style& _style)
+        {
+          std::stringstream _textStr;
+          auto&& _p = transform(_pos);
+          _textStr << "<text " << _style << " ";
+          _textStr << "x=\"" << _p.x() << "\" y=\"" << _p.y() << "\">" << _text;
+          _textStr << "</text>";
+          buffer_.push_back(_textStr.str());
+        }
+
         void write(const std::string& _filename) const 
         {
           std::ofstream _os(_filename.c_str());
@@ -63,7 +74,7 @@ namespace gex
           if (backgroundColor_.a() <= 0)
             _os << background();
 
-          for (const auto& _s : buffer_) _os << _s;
+          for (const auto& _s : buffer_) _os << _s << std::endl;
 
           _os << "</svg>" << std::endl;
         }
@@ -105,7 +116,7 @@ namespace gex
           return Shape("rect",_params.str(),_style.str());
         }
 
-        std::vector<Shape> buffer_;
+        std::vector<std::string> buffer_;
       };
     }
   }

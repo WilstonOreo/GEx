@@ -257,6 +257,19 @@ namespace gex
           return _os;
         }
 
+
+        friend bool operator==(const Bounds& _lhs, const Bounds& _rhs)
+        {
+          return (_lhs.min() == _rhs.min()) &&
+                 (_lhs.max() == _rhs.max());
+        }
+
+        friend bool operator!=(const Bounds& _lhs, const Bounds& _rhs)
+        {
+          return !(_lhs == _rhs); 
+        }
+
+
         TBD_PROPERTY_REF_MON(point_type,min,validate)
         TBD_PROPERTY_REF_MON(point_type,max,validate)
       };

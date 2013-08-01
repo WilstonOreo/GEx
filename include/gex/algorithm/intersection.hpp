@@ -52,6 +52,7 @@ namespace gex
         }
 */
 
+
       template<typename A, typename B>
       struct Intersection
       {
@@ -69,6 +70,25 @@ namespace gex
           }
         }
       };
+      
+      template<typename MODEL>
+      struct Intersection<prim::Segment<MODEL>,prim::Segment<MODEL>>
+      {
+      private:
+       typedef base::Point<MODEL> point_type;
+        typedef prim::Segment<MODEL> segment_type;
+
+        template<typename PRECISION = double>
+        bool operator()(
+            const segment_type& _a, 
+            const segment_type& _b, 
+            point_type& _i, 
+            PRECISION _eps = 0.0001)
+        {
+          return false;
+     //     return util::lineSegmentIntersection<point_type,PRECISION>()(_a,_b,_iPoint,_eps);
+        }
+      };
 
       template<typename SCALAR>
       struct Intersection<base::Range<SCALAR>,base::Range<SCALAR>>
@@ -79,6 +99,7 @@ namespace gex
         {
           _i.min(std::max(_a.min(),_b.min()));
           _i.max(std::min(_a.max(),_b.max()));
+          _i.validate();
         }
       };
       

@@ -63,6 +63,8 @@ namespace gex
           std::vector<LineString<MODEL>>, 
           Primitive<MODEL>
       {
+        GEX_PRIMITIVE(MODEL)
+        typedef LineString<MODEL> linestring_type;
       };
     }
   }

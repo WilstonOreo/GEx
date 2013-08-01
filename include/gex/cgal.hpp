@@ -2,6 +2,7 @@
 
 #include "prim.hpp"
 
+#include <CGAL/assertions.h>
 #include <CGAL/Origin.h>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
@@ -11,7 +12,8 @@ namespace gex
 {
   namespace cgal
   {
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
+    //typedef CGAL::Exact_predicates_inexact_constructions_kernel Traits;
+    typedef CGAL::Simple_cartesian<Scalar> Traits;
     typedef CGAL::Polygon_2<Traits> Ring;
     typedef CGAL::Polygon_with_holes_2<Traits> Polygon;
     typedef CGAL::Point_2<Traits> Point2;
@@ -66,7 +68,7 @@ namespace gex
       {\
         typedef primitive in_type;\
         typedef AdaptType<primitive>::type out_type;\
-        void operator()(const in_type&, out_type&);\
+        inline void operator()(const in_type&, out_type&);\
       };\
       void Adapter<primitive>::operator()(const in_type& _in, out_type& _out)
 

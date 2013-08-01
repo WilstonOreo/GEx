@@ -22,14 +22,14 @@ namespace gex
           scalar_type _radius = _bounds.radius();
           scalar_type _cos = _radius * cos(_angle*M_PI/180),
                       _sin = _radius * sin(_angle*M_PI/180);
-          vec_type _cross(-_sin,_cos);
-          vec_type _dir(_cos,_sin);
-          point_type _center = _bounds.center();
+          point_type _cross(-_sin,_cos);
+          point_type _dir(_cos,_sin);
+          point_type _center = _bounds.center() - _dir;
 
-          _result.first[0] = _center - _cross - _dir;
-          _result.first[1] = _result.first[0] + 2.0*_dir;
-          _result.second[0] = _center + _cross - _dir;
-          _result.second[1] = _result.second[0] + 2.0*_dir;
+          _result.first[0] = _center - _cross;
+          _result.first[1] = _result.first[0] + 2.0*vec_type(_dir);
+          _result.second[0] = _center + _cross;
+          _result.second[1] = _result.second[0] + 2.0*vec_type(_dir);
         }
       };
     }
