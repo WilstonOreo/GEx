@@ -34,32 +34,32 @@ IF (Boost_FOUND)
 ENDIF()
 
 ADD_DEFINITIONS("-DDEBUG")
-INCLUDE_DIRECTORIES(. ${CMAKE_CURRENT_BINARY_DIR} ./include ../TbdLib/include  )
 
 message("${Boost_LIBRARIES}")
 
-# Tests
-ADD_EXECUTABLE(Offset ./samples/Offset.cpp)
-TARGET_LINK_LIBRARIES(Offset ${Boost_LIBRARIES} rt)
+FUNCTION(sample_build)
+# Find all the input files
+  SET(sample_dir "${CMAKE_CURRENT_SOURCE_DIR}/samples")
 
-ADD_EXECUTABLE(Hexagon ./samples/Hexagon.cpp)
-TARGET_LINK_LIBRARIES(Hexagon ${Boost_LIBRARIES} rt)
+  FILE(GLOB sample_src RELATIVE "${sample_dir}"
+      "${sample_dir}/*.cpp")
+  MESSAGE(STATUS "Build samples in ${sample_dir}")
 
-ADD_EXECUTABLE(Voronoi ./samples/Voronoi.cpp)
-TARGET_LINK_LIBRARIES(Voronoi ${Boost_LIBRARIES} rt)
+  FOREACH(sample_rel_filename ${sample_src})
+    SET(sample_filename "${sample_dir}/${sample_rel_filename}")
+    SET(sample_name "${sample_rel_filename}")
+    STRING(REGEX REPLACE ".cpp" "" sample_name "${sample_name}")
+  
+    MESSAGE(STATUS "Build sample: ${sample_name} ${sample_filename}")
+    ADD_EXECUTABLE(${sample_name} ${sample_filename})
+    TARGET_LINK_LIBRARIES(${sample_name} ${Boost_LIBRARIES} rt)
+  ENDFOREACH()
+ENDFUNCTION()
 
-ADD_EXECUTABLE(Curvature ./samples/Curvature.cpp)
-TARGET_LINK_LIBRARIES(Curvature ${Boost_LIBRARIES} rt)
+sample_build()
 
-ADD_EXECUTABLE(Chop ./samples/Chop.cpp)
-TARGET_LINK_LIBRARIES(Chop ${Boost_LIBRARIES} rt)
-
-ADD_EXECUTABLE(ClosestPoint ./samples/ClosestPoint.cpp)
-TARGET_LINK_LIBRARIES(ClosestPoint ${Boost_LIBRARIES} rt)
-
-
-
-ADD_DEFINITIONS(-g -Os -fsigned-char -Wall -fPIC -std=c++11)
+INCLUDE_DIRECTORIES(. ${CMAKE_CURRENT_BINARY_DIR} ./include ../TbdLib/include  )
+ADD_DEFINITIONS(-g -O3 -fsigned-char -Wall -fPIC -std=c++11)
 ADD_DEFINITIONS(-ferror-limit=1 -fcolor-diagnostics -fdiagnostics-show-template-tree)
 
 

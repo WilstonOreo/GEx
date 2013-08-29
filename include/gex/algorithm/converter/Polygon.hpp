@@ -10,34 +10,16 @@ namespace gex
   {
     namespace converter
     {
-      /// Converts a polygon to points
-      template<typename MODEL>
-      struct Converter<prim::Polygon<MODEL>,std::vector<typename prim::Polygon<MODEL>::point_type>>
-      {
-        typedef prim::Polygon<MODEL> polygon_type;
-        typedef std::vector<typename polygon_type::point_type> points_type;
-        
-        void operator()(const polygon_type& _in, points_type& _out)
-        {
-          for_each_ring(_in,[&](const typename polygon_type::ring_type& r)
-          {
-            using tbd::seq_op::operator+=;
-            _out += convert<points_type>(r);
-          });
-        }
-      };
-
-
       /// Converts a polygon to segments
-      template<typename MODEL>
-      struct Converter<prim::Polygon<MODEL>,std::vector<prim::Segment<MODEL>>>
+      template<typename RING, typename POINT>
+      struct Converter<prim::Polygon<RING>,prim::MultiSegment<POINT>>
       {
-        typedef prim::Polygon<MODEL> polygon_type;
-        typedef std::vector<prim::Segment<MODEL>> segments_type;
+        typedef prim::Polygon<RING> polygon_type;
+        typedef prim::MultiSegment<POINT> segments_type;
 
         void operator()(const polygon_type& _in, segments_type& _out)
         {
-          for_each_ring(_in,[&](const typename polygon_type::ring_type& r)
+          for_each<typename polygon_type::ring_type>(_in,[&](const typename polygon_type::ring_type& r)
           {
             using tbd::seq_op::operator+=;
             _out += convert<segments_type>(r);
@@ -62,17 +44,17 @@ namespace gex
       };
 
       /// Convert a polygon to line strings
-      template<typename MODEL>
-      struct Converter<prim::Polygon<MODEL>,prim::MultiLineString<MODEL>>
+      template<typename RING, typename POINT>
+      struct Converter<prim::Polygon<RING>,prim::MultiLineString<POINT>>
       {
-        typedef prim::Polygon<MODEL> polygon_type;
-        typedef prim::MultiPolygon<MODEL> multipolygon_type;
+        typedef prim::Polygon<RING> polygon_type;
+        typedef prim::MultiLineString<POINT> multilinestring_type;
 
-        void operator()(const polygon_type& _in, multipolygon_type& _out)
+        void operator()(const polygon_type& _in, multilinestring_type& _out)
         {
-          for_each_ring(_in,[&](const typename polygon_type::ring_type& r)
+          for_each<RING>(_in,[&](const RING& r)
           {
-            _out.push_back(convert<prim::LineString<MODEL>>(r));
+            _out.push_back(convert<prim::LineString<POINT>>(r));
           });
         }
       };
@@ -93,15 +75,15 @@ namespace gex
         }
       };
 
-      template<typename MODEL>
-      struct Converter<prim::MultiPolygon<MODEL>,std::vector<prim::Segment<MODEL>>>
+      template<typename POLYGON, typename POINT>
+      struct Converter<prim::MultiPolygon<POLYGON>,prim::MultiSegment<POINT>>
       {
-        typedef prim::MultiPolygon<MODEL> multipolygon_type;
-        typedef std::vector<prim::Segment<MODEL>> segments_type;
+        typedef prim::MultiPolygon<POLYGON> multipolygon_type;
+        typedef prim::MultiSegment<POINT> segments_type;
 
         void operator()(const multipolygon_type& _in, segments_type& _out)
         {
-          for_each_ring(_in,[&](const typename multipolygon_type::ring_type& r)
+          for_each<typename multipolygon_type::ring_type>(_in,[&](const typename multipolygon_type::ring_type& r)
           {
             using tbd::seq_op::operator+=;
             _out += convert<segments_type>(r);

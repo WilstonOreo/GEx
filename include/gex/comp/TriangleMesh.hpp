@@ -7,14 +7,16 @@ namespace gex
   namespace comp
   {
     template<typename SCALAR>
-    struct TriangleMesh : prim::Primitive<base::Model<3,SCALAR>>
+    struct TriangleMesh 
     {
-      typedef base::Model<3,SCALAR> model_type;
-      typedef base::Model<4,SCALAR> matrix_model_type;
+      typedef SCALAR scalar_type;
+      typedef base::Model<3,scalar_type> model_type;
+      typedef base::Point<model_type> point_type;
+      typedef base::Bounds<model_type> bounds_type;
+      typedef base::Model<4,scalar_type> matrix_model_type;
       typedef base::Matrix<matrix_model_type> matrix_type;
-      GEX_PRIMITIVE(model_type)
 
-      typedef prim::Triangle<model_type> triangle_type;
+      typedef prim::Triangle<point_type> triangle_type;
       typedef std::vector<triangle_type> triangle_cont_type;
 
       TriangleMesh() : correct_(false) {}

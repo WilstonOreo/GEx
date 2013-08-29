@@ -2,6 +2,7 @@
 
 #include "Draw.hpp"
 #include "gex/prim/LineString.hpp"
+#include <gex/algorithm/for_each.hpp>
 
 namespace gex
 {
@@ -9,12 +10,12 @@ namespace gex
   {
     namespace svg
     {
-      template<typename SCALAR>
-      struct Draw<prim::LineString<SCALAR>>
+      template<typename POINT>
+      struct Draw<prim::LineString<POINT>>
       {
-        typedef prim::LineString<SCALAR> LineString;
+        typedef prim::LineString<POINT> linestring_type;
         
-        void operator()(const LineString& _lineString, 
+        void operator()(const linestring_type& _lineString, 
                         const Buffer::style_type& _style, 
                         Buffer& _buffer)
         {
@@ -27,6 +28,24 @@ namespace gex
             _points << _p.x() << "," << _p.y() << (it != --_lineString.end() ? " " : "\"");
           }
           _buffer += Shape("polyline",_points.str(),_style);
+        }
+      };
+
+
+      template<typename POINT>
+      struct Draw<prim::MultiLineString<POINT>>
+      {
+        typedef prim::MultiLineString<POINT> multilinestring_type;
+        
+        void operator()(const multilinestring_type& _multilineString,
+                        const Buffer::style_type& _style,
+                        Buffer& _buffer)
+        {
+          typedef prim::LineString<POINT> linestring_type;
+          for_each<linestring_type>(_multilineString,[](const linestring_type& _lineString)
+          {
+            Draw<linestring_type>(_lineString,_style,_buffer);
+          });
         }
       };
     }

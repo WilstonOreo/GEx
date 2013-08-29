@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include <fstream>
 #include "gex/prim.hpp"
 #include "Color.hpp"
 #include "Draw.hpp"

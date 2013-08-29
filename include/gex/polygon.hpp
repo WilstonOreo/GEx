@@ -2,6 +2,7 @@
 #include <boost/polygon/polygon.hpp>
 #include <gex/prim.hpp>
 
+
 namespace gex
 {
   /// Boost polygon wrapper
@@ -9,7 +10,7 @@ namespace gex
   {
     typedef boost::polygon::polygon_data<int> Ring;
     typedef boost::polygon::polygon_with_holes_data<int> Polygon;
-    typedef boost::polygon::polygon_traits<Polygon>::point_type Point2;
+    typedef boost::polygon::polygon_traits<Polygon>::point_type Point;
 
     template<typename PRIMITIVE>
     struct Adapter {};
@@ -23,8 +24,20 @@ namespace gex
         typedef out_type type;\
       };
 
-    GEX_POLYGON_ADAPT_TYPE(gex::Point2,polygon::Point2)
-    GEX_POLYGON_ADAPT_TYPE(polygon::Point2,gex::Point2)
+    struct Segment
+    {
+      typedef int coordinate_type;
+      typedef gex::polygon::Point point_type;
+      gex::polygon::Point p0, p1;
+
+      Segment( const Point& _p0,
+               const Point& _p1) : p0(_p0), p1(_p1) {}
+
+      Segment (int x1, int y1, int x2, int y2) : p0(x1, y1), p1(x2, y2) {}
+    };
+
+    GEX_POLYGON_ADAPT_TYPE(gex::Point2,polygon::Point)
+    GEX_POLYGON_ADAPT_TYPE(polygon::Point,gex::Point2)
     GEX_POLYGON_ADAPT_TYPE(gex::Ring,polygon::Ring)
     GEX_POLYGON_ADAPT_TYPE(polygon::Ring,gex::Ring)
     GEX_POLYGON_ADAPT_TYPE(gex::Polygon,polygon::Polygon)
@@ -78,9 +91,9 @@ namespace gex
       }
 
       template<typename RING, typename BOUNDS>
-      std::vector<polygon::Point2> points(const RING& _ring, const BOUNDS& _bounds)
+      std::vector<polygon::Point> points(const RING& _ring, const BOUNDS& _bounds)
       {
-        std::vector<polygon::Point2> _points;
+        std::vector<polygon::Point> _points;
         _points.reserve(_ring.size());
         for (auto& _point : _ring)
         {
@@ -103,10 +116,10 @@ namespace gex
     GEX_POLYGON_ADAPTER(gex::Point2)
     {
       auto&& _tP = transform(_in,_bounds);
-      _out = boost::polygon::construct<polygon::Point2>(_tP.x(),_tP.y());
+      _out = boost::polygon::construct<polygon::Point>(_tP.x(),_tP.y());
     }
 
-    GEX_POLYGON_ADAPTER(polygon::Point2)
+    GEX_POLYGON_ADAPTER(polygon::Point)
     {
       gex::Point2 _tP(_in.x(),_in.y());
       _out = invTransform(_tP,_bounds);
@@ -149,5 +162,41 @@ namespace gex
     }
   }
 }
+
+
+namespace boost {
+namespace polygon {
+/*
+template <>
+struct geometry_concept<gex::polygon::Point2> {
+  typedef point_concept type;
+};
+*/
+template <>
+struct point_traits<gex::polygon::Point> {
+  typedef int coordinate_type;
+
+  static inline coordinate_type get(
+      const gex::polygon::Point& point, orientation_2d orient) {
+    return (orient == HORIZONTAL) ? point.x() : point.y();
+  }
+};
+
+template <>
+struct geometry_concept<gex::polygon::Segment> {
+  typedef segment_concept type;
+};
+
+template <>
+struct segment_traits<gex::polygon::Segment> {
+  typedef int coordinate_type;
+  typedef gex::polygon::Point point_type;
+
+  static inline point_type get(const gex::polygon::Segment& segment, direction_1d dir) {
+    return dir.to_int() ? segment.p1 : segment.p0;
+  }
+};
+}  // polygon
+}  // boost
 
 

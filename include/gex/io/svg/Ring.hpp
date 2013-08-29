@@ -8,10 +8,10 @@ namespace gex
   {
     namespace svg
     {
-      template<>
-      struct Draw<Ring>
+      template<typename POINT>
+      struct Draw<prim::Ring<POINT>>
       { 
-        void operator()(const Ring& _ring, 
+        void operator()(const prim::Ring<POINT>& _ring, 
                         const Style& _style, 
                         Buffer& _buffer)
         {
@@ -23,6 +23,18 @@ namespace gex
             _points << _p.x() << "," << _p.y() << (it != --_ring.end() ? " " : "\"");
           }
           _buffer += Shape("polygon",_points.str(),_style);
+        }
+      };
+
+      template<typename POINT>
+      struct Draw<prim::MultiRing<POINT>>
+      {
+        void operator()(const prim::MultiRing<POINT>& _multiRing,
+                        const Style& _style, 
+                        Buffer& _buffer)
+        {
+          for (auto& _ring : _multiRing) 
+            Draw<typename std::decay<decltype(_ring)>::type>()(_ring,_style,_buffer);
         }
       };
     }

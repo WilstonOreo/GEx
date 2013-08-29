@@ -2,7 +2,6 @@
 
 #include "base.hpp"
 
-#include "prim/Primitive.hpp"
 #include "prim/Vertex.hpp"
 #include "prim/Segment.hpp"
 #include "prim/LineString.hpp"
@@ -13,31 +12,36 @@
 #include "prim/BoundingBox.hpp"
 #include "prim/Sphere.hpp"
 #include "prim/OrthogonalPlane.hpp"
+#include "prim/MultiPoint.hpp"
 
 namespace gex
 {
-    typedef prim::Primitive<Model2> Primitive2;
-    typedef prim::Segment<Model2> Segment;
-    typedef prim::LineString<Model2> LineString;
-    typedef prim::MultiLineString<Model2> MultiLineString;
+    typedef prim::Segment<Point2> Segment;
+    typedef prim::LineString<Point2> LineString;
+    typedef prim::MultiLineString<Point2> MultiLineString;
     typedef prim::Vertex<Model2> Vertex2;
-    typedef prim::Ring<Model2> Ring;
-    typedef prim::Polygon<Model2> Polygon;
-    typedef prim::MultiPolygon<Model2> MultiPolygon;
+    typedef prim::Ring<Point2> Ring;
+    typedef prim::MultiRing<Point2> MultiRing;
+    typedef prim::Polygon<Ring> Polygon;
+    typedef prim::MultiPolygon<Polygon> MultiPolygon;
 
-    typedef prim::Primitive<Model3> Primitive3;
-    typedef prim::Triangle<Model3> Triangle;
+    typedef prim::MultiPoint<Point2> MultiPoint2;
+    typedef prim::MultiPoint<Point3> MultiPoint3;
+
+    typedef prim::MultiSegment<Point2> MultiSegment;
+
     typedef prim::Vertex<Model3> Vertex3;
     typedef prim::BoundingBox<Model3> BoundingBox;
-    typedef prim::Sphere<Model3> Sphere;  
+    typedef prim::Triangle<Point3> Triangle;
+    typedef prim::Sphere<Scalar> Sphere;  
 
     template<base::Axis AXIS>
-    using OrthogonalPlane = prim::OrthogonalPlane<Model3,AXIS>;
+    using OrthogonalPlane = prim::OrthogonalPlane<Scalar,AXIS>;
 }
 
 #include <boost/geometry/geometries/segment.hpp>
 #include <boost/geometry/geometries/register/segment.hpp>
-BOOST_GEOMETRY_REGISTER_SEGMENT(gex::Segment,gex::Point2,p0,p1)
+BOOST_GEOMETRY_REGISTER_SEGMENT(gex::Segment,gex::Point2,p0(),p1())
 
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/register/linestring.hpp>

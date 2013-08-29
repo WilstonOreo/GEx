@@ -1,7 +1,9 @@
+#pragma once
 #include <gex/prim.hpp>
 #include <gex/polygon.hpp>
 #include <boost/polygon/voronoi.hpp>
 #include "for_each.hpp"
+#include "envelope.hpp"
 
 namespace gex
 {
@@ -9,36 +11,10 @@ namespace gex
   {
     namespace functor
     {
-      struct Voronoi
+      namespace detail
       {
-        template<typename POINTS, typename BOUNDS, typename SEGMENTS>
-        void operator()(const POINTS& _pointSet, const BOUNDS& _bounds, SEGMENTS& _segments)
-        {
-          typedef typename PRIMITIVE::point_type point_type;
-          using polygon::adapt;
-          std::vector<polygon::Point2> _points;
-          for (auto& _p : _points)
-            _points.push_back(polygon::adapt(_p,_bounds));
-          generate(_points,_bounds,_segments);
-        }
-
-        template<typename PRIMITIVE, typename SEGMENTS>
-        void operator()(const PRIMITIVE& _prim, SEGMENTS& _segments)
-        {
-          typedef typename PRIMITIVE::point_type point_type;
-          std::vector<polygon::Point2> _points;
-          _points.reserve(num<point_type>(_prim));
-          auto _bounds = _prim.bounds();
-          for_each<point_type>(_prim,[&](const point_type& _p)
-          {
-            _points.push_back(polygon::adapt(_p,_bounds));
-          });
-          generate(_points,_bounds,_segments);
-        }
-
-      private:
         template<typename POINTSET, typename CELL>
-        polygon::Point2 const& retrieve_point(const POINTSET& _points, const CELL& _cell)
+        gex::polygon::Point const& retrieve_point(const POINTSET& _points, const CELL& _cell)
         {
           return _points[_cell.source_index()];
         }
@@ -46,82 +22,160 @@ namespace gex
         template<typename POINTSET, typename EDGE, typename BOUNDS, typename POINT>
         void clip_infinite_edge(
           const POINTSET& _points,
-          const EDGE& _edge,
+          const EDGE& edge,
           const BOUNDS& _bounds,
-          std::vector<POINT>& _clippedEdge)
+          std::vector<POINT>& clipped_edge)
         {
           typedef POINT point_type;
           typedef int coordinate_type; // @todo generic type here...
 
-          auto& _cell1 = *_edge.cell();
-          auto& _cell2 = *_edge.twin()->cell();
-          point_type _origin, _direction;
+          auto& cell1 = *edge.cell();
+          auto& cell2 = *edge.twin()->cell();
+          point_type origin, direction;
           // Infinite edges could not be created by two segment sites.
-          if (_cell1.contains_point() && _cell2.contains_point())
+          if (cell1.contains_point() && cell2.contains_point())
           {
-            auto& _p1 = retrieve_point(_points,_cell1);
-            auto& _p2 = retrieve_point(_points,_cell2);
-            _origin.x((_p1.x() + _p2.x()) * 0.5);
-            _origin.y((_p1.y() + _p2.y()) * 0.5);
-            direction.x(_p1.y() - _p2.y());
-            direction.y(_p2.x() - _p1.x());
+            auto& p1 = retrieve_point(_points,cell1);
+            auto& p2 = retrieve_point(_points,cell2);
+            origin.x((p1.x() + p2.x()) * 0.5);
+            origin.y((p1.y() + p2.y()) * 0.5);
+            direction.x(p1.y() - p2.y());
+            direction.y(p2.x() - p1.x());
           }
           else
           {
             return;
           }
-          coordinate_type _side = _bounds.size().y();
-          coordinate_type _koef =
-            side / (std::max)(std::abs(_direction.x()), std::abs(_direction.y()));
-          
-          point_type _point(_origin.x() - _direction.x() * _koef,
-                            _origin.y() - _direction.y() * _koef);
-          if (!_edge.vertex0())
+          coordinate_type side = _bounds.size().y();
+          coordinate_type koef =
+            side / (std::max)(std::abs(direction.x()), std::abs(direction.y()));
+          if (edge.vertex0() == NULL)
           {
-            _clippedEdge.emplace_back(_point);
+            clipped_edge.emplace_back(origin.x() - direction.x() * koef,
+                                      origin.y() - direction.y() * koef);
           }
           else
           {
-            _clippedEdge.emplace_back(_edge.vertex0()->x(), _edge.vertex0()->y());
+            clipped_edge.emplace_back(edge.vertex0()->x(), edge.vertex0()->y());
           }
-          if (!_edge.vertex1())
+          if (edge.vertex1() == NULL)
           {
-            _clippedEdge.emplace_back(_point);
+            clipped_edge.emplace_back(origin.x() + direction.x() * koef,
+                                      origin.y() + direction.y() * koef);
           }
           else
           {
-            _clippedEdge.emplace_back(_edge.vertex1()->x(), _edge.vertex1()->y());
+            clipped_edge.emplace_back(edge.vertex1()->x(), edge.vertex1()->y());
           }
         }
 
-        template<typename BOUNDS, typename SEGMENTS>
-        void generate(const std::vector<polygon::Point2>& _points, const BOUNDS&, SEGMENTS& _segments)
+        template<typename PRIMITIVE, typename BOUNDS>
+        std::vector<polygon::Segment> primitive_segments(const PRIMITIVE& _prim, const BOUNDS& _bounds)
         {
-          typedef typename PRIMITIVE::point_type point_type;
-          using polygon::adapt;
-          
+          typedef gex::prim::Segment<typename PRIMITIVE::point_type> segment_type;
+          std::vector<polygon::Segment> _segments;
+          gex::algorithm::for_each<segment_type>(_prim,[&](const segment_type& _segment)
+          {
+            _segments.emplace_back(
+              gex::polygon::adapt(_segment.p0(),_bounds),
+              gex::polygon::adapt(_segment.p1(),_bounds)
+            );
+          });
+
+          return _segments;
+        }
+
+        template<typename SEGMENTS, typename BOUNDS, typename VORONOI>
+        void voronoi_from_segments(const SEGMENTS& _segments, const BOUNDS& _bounds, VORONOI& _voronoi)
+        {
+          boost::polygon::voronoi_diagram<double> vd;
+          boost::polygon::construct_voronoi(_segments.begin(), _segments.end(),&vd);
+          bool _skip = true;
+          for (auto& _edge : vd.edges())
+          {
+            _skip = !_skip;
+            if (!_edge.is_primary()) continue; 
+            if (_skip) continue;
+            auto _v0 = _edge.vertex0();
+            auto _v1 = _edge.vertex1();
+            if (!_v0 || !_v1)
+            {
+              std::cout << "Infinite edge" << std::endl;
+              continue;
+            }
+            using namespace gex::polygon;
+            gex::Point2 _p0 = adapt(Point(_v0->x(),_v0->y()),_bounds);
+            gex::Point2 _p1 = adapt(Point(_v1->x(),_v1->y()),_bounds);
+            _voronoi.emplace_back(_p0,_p1);
+          }
+        }
+      }
+
+      template<typename PRIMITIVE>
+      struct Voronoi {};
+
+      template<typename POINT>
+      struct Voronoi<gex::prim::Ring<POINT>> 
+      {
+        typedef gex::prim::Segment<POINT> segment_type;
+        typedef gex::prim::MultiSegment<POINT> voronoi_type;
+        typedef gex::prim::Ring<POINT> primitive_type;
+
+        template<typename PRIMITIVE>
+        void operator()(const PRIMITIVE& _prim, voronoi_type& _voronoi)
+        {
+          auto&& _bounds = _prim.bounds();
+          detail::voronoi_from_segments(detail::primitive_segments(_prim,_bounds),_bounds,_voronoi);
+        }
+      };
+
+      template<typename RING>
+      struct Voronoi<gex::prim::Polygon<RING>> : 
+        Voronoi<RING>
+      {
+        typedef gex::prim::MultiSegment<typename RING::point_type> voronoi_type;
+      };
+
+      template<typename POINT>
+      struct Voronoi<gex::prim::MultiPoint<POINT>>
+      {
+        typedef gex::prim::Segment<POINT> segment_type;
+        typedef prim::MultiSegment<POINT> voronoi_type;
+        typedef gex::prim::MultiPoint<POINT> primitive_type;
+
+        void operator()(const primitive_type& _prim, voronoi_type& _voronoi)
+        {
+          auto&& _bounds = envelope(_prim);
+
+          std::vector<gex::polygon::Point> _points;
+          for (auto& _p : _prim)
+          {
+            _points.push_back(gex::polygon::adapt(_p,_bounds));
+          }
+
           boost::polygon::voronoi_diagram<double> vd;
           boost::polygon::construct_voronoi(_points.begin(), _points.end(),&vd);
 
-          /// Retrieve edges from voronoi
           for (auto& _edge : vd.edges())
           {
-            auto _v0 = _edge.vertex0(), _v1 = _edge.vertex1();
+            auto _v0 = _edge.vertex0();
+            auto _v1 = _edge.vertex1();
             if (!_v0 || !_v1)
             {
-              std::vector<polygon::Point2> _cEdge;
-              clip_infinite_edge(_points,_edge,_bounds,_cEdge);
-              if (_cEdge.size() == 2)
+              std::vector<gex::polygon::Point> _clippedEdge;
+              detail::clip_infinite_edge(_points,_edge,_bounds,_clippedEdge);
+              if (_clippedEdge.size() == 2)
               {
-                _segments.emplace_back(
-                  adapt(_cEdge[0],_bounds),adapt(_cEdge[1],_bounds));
+                _voronoi.emplace_back(
+                  gex::polygon::adapt(_clippedEdge[0],_bounds),
+                  gex::polygon::adapt(_clippedEdge[1],_bounds));
               }
               continue;
             }
-
-            auto&& _p0 = adapt(polygon::Point2(_v0->x(),_v0->y()),_bounds);
-            auto&& _p1 = adapt(polygon::Point2(_v1->x(),_v1->y()),_bounds);
-            _segments.emplace_back(_p0,_p1);
+            using namespace gex::polygon;
+            gex::Point2 _p0 = adapt(Point(_v0->x(),_v0->y()),_bounds);
+            gex::Point2 _p1 = adapt(Point(_v1->x(),_v1->y()),_bounds);
+            _voronoi.emplace_back(_p0,_p1);
           }
         }
       };
@@ -129,35 +183,22 @@ namespace gex
 
     using functor::Voronoi;
 
-    template<typename PRIMITIVE, typename SEGMENTS>
-    void voronoi(const PRIMITIVE& _prim, SEGMENTS& _segments)
+    template<typename PRIMITIVE, typename VORONOI>
+    void voronoi(const PRIMITIVE& _prim, VORONOI& _voronoi)
     {
-      Voronoi()(_prim,_segments);
-    }
-    
-    template<typename POINTS, typename BOUNDS, typename SEGMENTS>
-    void voronoi(const POINTS& _points, const BOUNDS& _bounds, SEGMENTS& _segments)
-    {
-      Voronoi()(_points,_bounds,_segments);
+      Voronoi<PRIMITIVE>()(_prim,_voronoi);
     }
 
     template<typename PRIMITIVE>
-    std::vector<prim::Segment<typename PRIMITIVE::model_type>> voronoi(const PRIMITIVE& _prim)
+    typename Voronoi<PRIMITIVE>::voronoi_type voronoi(const PRIMITIVE& _prim)
     {
-      std::vector<prim::Segment<typename PRIMITIVE::model_type>> _segments;
-      voronoi(_prim,_segments);
-      return _segments;
-    }
-
-    template<typename POINTS, typename BOUNDS>
-    std::vector<prim::Segment<typename PRIMITIVE::model_type>> 
-      voronoi(const POINTS& _points, const BOUNDS& _bounds)
-    {
-      std::vector<prim::Segment<typename PRIMITIVE::model_type>> _segments;
-      voronoi(_points,_bounds,_segments);
-      return _segments;
+      typename Voronoi<PRIMITIVE>::voronoi_type _voronoi;
+      voronoi(_prim,_voronoi);
+      return _voronoi;
     }
   }
+
+  using algorithm::voronoi;
 }
 
 

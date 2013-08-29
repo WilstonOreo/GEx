@@ -1,20 +1,23 @@
 #pragma once
 
 #include "Ring.hpp"
-#include "gex/base/Bounds.hpp"
 
 namespace gex
 {
     namespace prim
     {
-      template<typename MODEL> 
-        struct Polygon : 
-          Primitive<MODEL>
+      template<typename RING> 
+      struct Polygon
       {
-        GEX_PRIMITIVE(MODEL)
-        typedef Ring<MODEL> ring_type;
+        typedef RING ring_type;
+        typedef ring_type sub_primitive_type;
         typedef std::vector<ring_type> holes_type;
         typedef typename ring_type::size_type size_type;
+        typedef typename ring_type::bounds_type bounds_type;
+        typedef typename ring_type::scalar_type scalar_type;
+        typedef typename ring_type::model_type model_type;
+        typedef typename ring_type::point_type point_type;
+        typedef typename ring_type::range_type range_type;
 
         Polygon() :
           correct_(false)

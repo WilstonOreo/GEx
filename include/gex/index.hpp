@@ -9,12 +9,14 @@ namespace gex
   namespace index
   {
     using boost::geometry::index::intersects;
+    using boost::geometry::index::covered_by;
     using boost::geometry::index::within;
     using boost::geometry::index::rtree;
     using boost::geometry::index::linear;
     using boost::geometry::index::rstar;
     using boost::geometry::index::insert;
     using boost::geometry::index::query;
+    using boost::geometry::index::nearest;
 
     static inline constexpr size_t defaultNumber() { return 8; }
 

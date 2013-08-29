@@ -1,7 +1,6 @@
 #pragma once
 
-#include "gex/prim.hpp"
-#include "ForEachRing.hpp"
+#include "ForEach.hpp"
 
 namespace gex
 {
@@ -9,109 +8,95 @@ namespace gex
   {
     namespace functor
     {
-      template<typename PRIMITIVE>
-      struct ForEachPoint
+      namespace 
       {
-        template<typename FUNCTOR>
-        void operator()(PRIMITIVE& _primitive, FUNCTOR f)
+        template<typename BEGIN, typename END, typename FUNCTOR> 
+        void for_each_point_range(BEGIN _begin, END _end, FUNCTOR f)
         {
-          for (auto& _p : _primitive) 
-            f(_p);
+          for (auto it = _begin; it != _end; ++it)
+            f(*it);
         }
-        
+      }
+
+#define GEX_ALGORITHM_FOREACH_POINT(primitive_type)\
+      template<typename POINT, bool IS_CONST>\
+      struct ForEach<POINT,primitive_type<POINT>,IS_CONST>\
+      {\
+        GEX_ALGORITHM_FOREACH_TYPEDEFS(POINT,primitive_type<POINT>)\
+        template<typename FUNCTOR>\
+        void operator()(prim_ref_type _prim, FUNCTOR f);\
+      };\
+      template<typename POINT, bool IS_CONST> template<typename FUNCTOR>\
+      void ForEach<POINT,primitive_type<POINT>,IS_CONST>::operator()(prim_ref_type _prim, FUNCTOR f)
+
+      GEX_ALGORITHM_FOREACH_POINT(prim::Segment)
+      {
+        f(_prim[0]);
+        f(_prim[1]);
+      }
+
+      GEX_ALGORITHM_FOREACH_POINT(prim::LineString)
+      {
+        for_each_point_range(_prim.begin(),_prim.end(),f);
+      }
+
+      GEX_ALGORITHM_FOREACH_POINT(prim::Ring)
+      {
+        for_each_point_range(_prim.begin(),_prim.end(),f);
+      }
+
+      GEX_ALGORITHM_FOREACH_POINT(std::vector)
+      {
+        for_each_point_range(_prim.begin(),_prim.end(),f);
+      }
+
+      template<typename POINT, bool IS_CONST>
+      struct ForEach<POINT,prim::MultiLineString<POINT>,IS_CONST>
+      {
+        GEX_ALGORITHM_FOREACH_TYPEDEFS(POINT,prim::MultiLineString<POINT>)
         template<typename FUNCTOR>
-        void operator()(const PRIMITIVE& _primitive, FUNCTOR f)
+        void operator()(prim_ref_type _multiLineString, FUNCTOR f)
         {
-          for (auto& _p : _primitive) 
-            f(_p);
+          for (auto& _lineString : _multiLineString) 
+            ForEach<POINT,typename prim::MultiLineString<POINT>::value_type,IS_CONST>()(_lineString,f);
         }
       };
 
-      template<typename MODEL>
-      struct ForEachPoint<prim::Segment<MODEL>> 
+      template<typename RING, bool IS_CONST>
+      struct ForEach<typename RING::point_type,prim::Polygon<RING>,IS_CONST>
       {
+        typedef typename RING::point_type point_type;        
+        GEX_ALGORITHM_FOREACH_TYPEDEFS(point_type,prim::Polygon<RING>)
         template<typename FUNCTOR>
-        void operator()(prim::Segment<MODEL>& _s, FUNCTOR f)
+        void operator()(prim_ref_type _polygon, FUNCTOR f)
         {
-          f(_s[0]); f(_s[1]);
-        }
-        
-        template<typename FUNCTOR>
-        void operator()(const prim::Segment<MODEL>& _s, FUNCTOR f)
-        {
-          f(_s[0]); f(_s[1]);
-        }
-      };
-      
-      template<typename MODEL>
-      struct ForEachPoint<prim::Polygon<MODEL>> 
-      {
-        typedef prim::Polygon<MODEL> polygon_type;
-        typedef prim::Ring<MODEL> ring_type;
-
-        template<typename FUNCTOR>
-        void operator()(polygon_type& _p, FUNCTOR f)
-        {
-          ForEachRing<polygon_type>()(_p,[&](ring_type& _r)
+          typedef typename tbd::AddConstIf<RING,IS_CONST>::ref_type ring_ref_type;
+          ForEach<RING,primitive_type,IS_CONST>()(_polygon,[&](ring_ref_type _ring)
           {
-            ForEachPoint<ring_type>()(_r,f);
-          });
-        }
-        
-        template<typename FUNCTOR>
-        void operator()(const polygon_type& _p, FUNCTOR f)
-        {
-          ForEachRing<polygon_type>()(_p,[&](const ring_type& _r)
-          {
-            ForEachPoint<ring_type>()(_r,f);
-          });
-        }
-      };
-
-      template<typename MODEL>
-      struct ForEachPoint<prim::MultiPolygon<MODEL>> 
-      {
-        typedef prim::MultiPolygon<MODEL> polygon_type;
-        typedef prim::Ring<MODEL> ring_type;
-
-        template<typename FUNCTOR>
-        void operator()(polygon_type& _p, FUNCTOR f)
-        {
-          ForEachRing<polygon_type>()(_p,[&](ring_type& _r)
-          {
-            ForEachPoint<ring_type>()(_r,f);
-          });
-        }
-        
-        template<typename FUNCTOR>
-        void operator()(const polygon_type& _p, FUNCTOR f)
-        {
-          ForEachRing<polygon_type>()(_p,[&](const ring_type& _r)
-          {
-            ForEachPoint<ring_type>()(_r,f);
+            ForEach<point_type,RING,IS_CONST>()(_ring,f);
           });
         }
       };
 
-      template<typename PRIMITIVE>
-      struct ForEachPoint<std::vector<PRIMITIVE>> 
+      template<typename POLYGON, bool IS_CONST>
+      struct ForEach<typename POLYGON::point_type,prim::MultiPolygon<POLYGON>,IS_CONST>
       {
-        typedef std::vector<PRIMITIVE> primitives_type;
-
+        typedef typename POLYGON::point_type point_type;
+        GEX_ALGORITHM_FOREACH_TYPEDEFS(point_type,prim::MultiPolygon<POLYGON>)
         template<typename FUNCTOR>
-        void operator()(primitives_type& _primitives, FUNCTOR f)
+        void operator()(prim_ref_type _multiPolygon, FUNCTOR f)
         {
-          for (auto& _p : _primitives) 
-            ForEachPoint<PRIMITIVE>()(_p,f);
+          typedef typename tbd::AddConstIf<POLYGON,IS_CONST>::ref_type polygon_ref_type;
+          ForEach<POLYGON,primitive_type,IS_CONST>()(_multiPolygon,[&](polygon_ref_type _polygon)
+          {
+            ForEach<point_type,POLYGON,IS_CONST>()(_polygon,f);
+          });
         }
-        
-        template<typename FUNCTOR>
-        void operator()(const primitives_type& _primitives, FUNCTOR f)
-        {
-          for (auto& _p : _primitives) 
-            ForEachPoint<PRIMITIVE>()(_p,f);
-        } 
       };
     }
   }
 }
+
+
+
+

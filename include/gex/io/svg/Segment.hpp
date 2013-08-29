@@ -9,10 +9,12 @@ namespace gex
   {
     namespace svg
     {
-      template<>
-      struct Draw<Segment>
+      template<typename POINT>
+      struct Draw<prim::Segment<POINT>>
       {
-        void operator()(const Segment& _segment, 
+        typedef prim::Segment<POINT> segment_type;
+
+        void operator()(const segment_type& _segment, 
                         const Style& _style, 
                         Buffer& _buffer)
         {
@@ -25,9 +27,20 @@ namespace gex
             "x2=\"" << _p1.x() << "\" " << 
             "y2=\"" << _p1.y() << "\"";
           _buffer += Shape("line",_parameter.str(),_style);
+          Draw<POINT>()(_segment[0],"stroke:yellow",_buffer,5);
+          Draw<POINT>()(_segment[1],"stroke:white",_buffer,7);
+        }
+      };
 
-          Draw<Point2>()(_segment[0],"stroke:yellow",_buffer,5);
-          Draw<Point2>()(_segment[1],"stroke:white",_buffer,7);
+      template<typename POINT>
+      struct Draw<prim::MultiSegment<POINT>>
+      {
+        void operator()(const prim::MultiSegment<POINT>& _segments,
+                        const Style& _style, 
+                        Buffer& _buffer)
+        {
+          for (auto& _segment : _segments)
+            Draw<typename std::decay<decltype(_segment)>::type>()(_segment,_style,_buffer);
         }
       };
     }

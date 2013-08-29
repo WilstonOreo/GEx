@@ -13,5 +13,14 @@ namespace gex
     {
       return SqrDistance<A,B>()(_a,_b);
     }
+    
+    template<typename A, typename B>
+    typename A::scalar_type distance(const A& _a, const B& _b)
+    {
+      return std::sqrt(sqrDistance(_a,_b));
+    }
   }
+
+  using algorithm::distance;
+  using algorithm::sqrDistance;
 }

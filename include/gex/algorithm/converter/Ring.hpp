@@ -13,15 +13,15 @@ namespace gex
     namespace converter
     {
       /// Converts a ring to points
-      template<typename MODEL>
-      struct Converter<prim::Ring<MODEL>,std::vector<typename prim::Ring<MODEL>::point_type>>
+      template<typename POINT>
+      struct Converter<prim::Ring<POINT>,std::vector<POINT>>
       {
-        typedef prim::Ring<MODEL> ring_type;
-        typedef std::vector<typename ring_type::point_type> points_type;
+        typedef prim::Ring<POINT> ring_type;
+        typedef std::vector<POINT> points_type;
         void operator()(const ring_type& _in, points_type& _out)
         {
           _out.clear();
-          for_each_point(_in,[&](const Point2& p)
+          for_each<POINT>(_in,[&](const POINT& p)
           {
             _out.push_back(p);
           });
@@ -29,11 +29,11 @@ namespace gex
       };
 
       /// Converts a ring to a vector of segments
-      template<typename MODEL>
-      struct Converter<prim::Ring<MODEL>,std::vector<typename prim::Segment<MODEL>>>
+      template<typename POINT>
+      struct Converter<prim::Ring<POINT>,prim::MultiSegment<POINT>>
       {
-        typedef prim::Ring<MODEL> ring_type;
-        typedef std::vector<prim::Segment<MODEL>> segments_type;
+        typedef prim::Ring<POINT> ring_type;
+        typedef prim::MultiSegment<POINT> segments_type;
 
         void operator()(const ring_type& _in, segments_type& _out)
         {
@@ -43,16 +43,16 @@ namespace gex
       };
 
       /// Converts a ring into a linestring
-      template<typename MODEL>
-      struct Converter<prim::Ring<MODEL>,prim::LineString<MODEL>>
+      template<typename POINT>
+      struct Converter<prim::Ring<POINT>,prim::LineString<POINT>>
       {
-        typedef prim::Ring<MODEL> ring_type;
-        typedef prim::LineString<MODEL> linestring_type;
+        typedef prim::Ring<POINT> ring_type;
+        typedef prim::LineString<POINT> linestring_type;
 
         void operator()(const ring_type& _in, linestring_type& _out)
         {
           _out.clear();
-          for_each_point(_in,[&](const Point2& p)
+          for_each<POINT>(_in,[&](const POINT& p)
           {
             _out.push_back(p);
           });
@@ -60,11 +60,11 @@ namespace gex
       };
 
       /// Converts a ring into a multilinestring
-      template<typename MODEL>
-      struct Converter<prim::Ring<MODEL>,prim::MultiLineString<MODEL>>
+      template<typename POINT>
+      struct Converter<prim::Ring<POINT>,prim::MultiLineString<prim::LineString<POINT>>>
       {
-        typedef prim::Ring<MODEL> ring_type;
-        typedef prim::MultiLineString<MODEL> multilinestring_type;
+        typedef prim::Ring<POINT> ring_type;
+        typedef prim::MultiLineString<prim::LineString<POINT>> multilinestring_type;
         void operator()(const ring_type& _in, multilinestring_type& _out)
         {
           _out = convert<MultiLineString>(convert<LineString>(_in));
@@ -72,15 +72,15 @@ namespace gex
       };
 
       /// Ring sorter converter: Converts a set of rings into a multi polygon
-      template<typename MODEL>
-      struct Converter<std::vector<prim::Ring<MODEL>>,prim::MultiPolygon<MODEL>>
+      template<typename POINT, typename POLYGON>
+      struct Converter<prim::MultiRing<POINT>,prim::MultiPolygon<POLYGON>>
       {
-        typedef std::vector<prim::Ring<MODEL>> rings_type;
-        typedef prim::MultiPolygon<MODEL> multipolygon_type;
+        typedef prim::MultiRing<POINT> rings_type;
+        typedef prim::MultiPolygon<POLYGON> multipolygon_type;
 
         void operator()(const rings_type& _in, multipolygon_type& _out)
         {
-          std::vector<Ring> _boundaries, _holes;
+          rings_type _boundaries, _holes;
           for (auto& _ring : _in)
           {
             if (_ring.size() < 3) continue;
@@ -109,7 +109,7 @@ namespace gex
             auto _holeIt = _holes.begin();
             // Store holes temporary in another vector as
             // they need to be unified afterwards
-            std::vector<Ring> _holesTmp;
+            rings_type _holesTmp;
             while (_holeIt != _holes.end())
             {
               if (!within(*_holeIt,_boundary)) ++_holeIt;
@@ -119,7 +119,7 @@ namespace gex
                 _holeIt = _holes.erase(_holeIt);
               }
             }
-            _out.push_back(Polygon(_boundary,unify(_holesTmp)));
+            _out.emplace_back(_boundary,unify(_holesTmp));
           }
           _out = unify(_out);
         }

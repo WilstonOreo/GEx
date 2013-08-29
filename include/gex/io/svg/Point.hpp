@@ -8,10 +8,10 @@ namespace gex
   {
     namespace svg
     {
-      template<>
-      struct Draw<Point2>
+      template<typename MODEL>
+      struct Draw<base::Point<MODEL>>
       {  
-        void operator()(const Point2& _point, 
+        void operator()(const base::Point<MODEL>& _point, 
                         const Style& _style, 
                         Buffer& _buffer,
                         float _radius = 5)
@@ -25,6 +25,11 @@ namespace gex
           _buffer += Shape("circle fill=\"none\"",ss.str(),_style);
         }
       };
+
+    template<typename POINT>
+    struct Draw<prim::MultiPoint<POINT>> : 
+      Draw<std::vector<POINT>>
+    {};
     }
   }
 }

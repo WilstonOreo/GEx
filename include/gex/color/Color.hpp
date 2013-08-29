@@ -4,6 +4,7 @@
 #include <boost/mpl/int.hpp>
 #include "gex/misc.hpp"
 #include "gex/base/Model.hpp"
+#include <sstream>
 
 namespace gex
 {
@@ -244,6 +245,42 @@ namespace gex
       const component_type a(boost::mpl::int_<3>) const
       {
         return max();
+      }
+
+      template<class OSTREAM>
+      inline OSTREAM& format( OSTREAM& _s ) const
+      {
+        bool _f=true;
+        for( auto& _c : v_ )
+        {
+          if( _f )
+          {
+            _s << "(" << _c;
+            _f = false;
+          }
+          else
+            _s << "," << _c;
+        }
+        _s << ")";
+        return _s;
+      }
+
+      friend std::ostream& operator<<(std::ostream& _os, const Color& _c)
+      {
+        return _c.format(_os);
+      }
+
+      friend std::istream& operator>>(std::istream& _is, Color& _c)
+      {
+        std::vector<std::string> _tokens;
+        tbd::parse(_is,_tokens,"(",")",",",1);
+        if (_tokens.size() != _c.channels()) return _is;
+        for (size_t i = 0; i < _c.channels(); ++i)
+        {
+          std::stringstream _iss(_tokens[i]);
+          _iss >> _c[i];
+        }
+        return _is;
       }
 
     protected:

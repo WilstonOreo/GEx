@@ -72,7 +72,7 @@ template<typename BOUNDS, typename VERTICES, typename PRIMITIVE>
 void warp(const BOUNDS& _bounds, const VERTICES& _vertices, PRIMITIVE& _lineStrings)
 {
   auto&& _c = _bounds.center();
-  gex::algorithm::for_each_point(_lineStrings,[&](gex::Point2& _point)
+  gex::algorithm::for_each<gex::Point2>(_lineStrings,[&](gex::Point2& _point)
   {
     gex::Vertex2 _d(_bounds.size());
     for (auto& _v : _vertices)

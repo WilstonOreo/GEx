@@ -1,15 +1,21 @@
 #pragma once
 
-#include "Primitive.hpp"
+#include "gex/base/Vec.hpp"
+#include "gex/base/Point.hpp"
+#include "gex/base/Bounds.hpp"
 
 namespace gex
 {
     namespace prim
     {
-      template<typename MODEL>
-      struct Sphere : Primitive<MODEL>
+      template<typename SCALAR>
+      struct Sphere 
       {
-        GEX_PRIMITIVE(MODEL)
+        typedef SCALAR scalar_type;
+        typedef base::Model<3,scalar_type> model_type;
+        typedef base::Point<model_type> point_type;
+        typedef base::Vec<model_type> vec_type;
+        typedef base::Bounds<model_type> bounds_type;
 
         Sphere(scalar_type _radius = 1.0, 
                point_type _center = vec_type()) :

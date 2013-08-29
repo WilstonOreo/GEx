@@ -35,12 +35,7 @@ namespace gex
 
         void operator()(const linestring_type& _in, ring_type& _out)
         {
-          _out.clear();
-          for_each_point(_in,[&](const typename linestring_type::point_type& p)
-          {
-            _out.push_back(p);
-          });
-          _out.update();
+          _out = ring_type(_in.begin(),_in.end());
         }
       };
 

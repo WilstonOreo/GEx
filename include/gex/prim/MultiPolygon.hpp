@@ -6,17 +6,19 @@ namespace gex
 {
     namespace prim
     {
-      template<typename MODEL>
+      template<typename POLYGON>
       struct MultiPolygon :
-          Primitive<MODEL>,
-          std::vector<Polygon<MODEL>>
+          std::vector<POLYGON>
        {
-        GEX_PRIMITIVE(MODEL)
-
-        typedef Polygon<MODEL> polygon_type;
+        typedef POLYGON polygon_type;
+        typedef polygon_type sub_primitive_type;
         typedef typename polygon_type::ring_type ring_type;
+        typedef typename polygon_type::scalar_type scalar_type;
+        typedef typename polygon_type::bounds_type bounds_type;
+        typedef typename polygon_type::point_type point_type;
+
         typedef std::vector<polygon_type> container_type;
-        typedef typename container_type::size_type size_type;
+        using typename container_type::size_type;
 
         MultiPolygon() :
           correct_(false)
@@ -65,7 +67,7 @@ namespace gex
           assign(_from,_to);
         }
 
-        void push_back(const Polygon<MODEL>& _polygon)
+        void push_back(const polygon_type& _polygon)
         {
           correct_ = false;
           container_type::push_back(_polygon);

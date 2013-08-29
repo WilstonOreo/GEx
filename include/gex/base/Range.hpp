@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sstream>
 #include "Model.hpp"
 
 namespace gex
@@ -91,7 +92,24 @@ namespace gex
           _range -= _r;
           return _range;
         }
-        
+       
+        friend std::ostream& operator<<(std::ostream& _os, const Range& _r)
+        {
+          _os << "[" << _r.min() << "," << _r.max() << "]";
+          return _os;
+        }
+
+        friend std::istream& operator>>(std::istream& _is, Range& _r)
+        {
+          std::vector<std::string> _tokens;
+          tbd::parse(_is,_tokens,"[","]",",",1);
+          if (_tokens.size() != 2) return _is;
+          
+          std::stringstream _iss(_tokens[0] + " " + _tokens[1]);
+          _iss >> _r.min_ >> _r.max_;
+          _r.validate();
+          return _is;
+        }
 
         TBD_PROPERTY_REF_MON(scalar_type,min,validate)
         TBD_PROPERTY_REF_MON(scalar_type,max,validate)

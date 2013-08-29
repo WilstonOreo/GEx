@@ -12,4 +12,6 @@ namespace gex
     using converter::Converter;
     using converter::convert;
   }
+
+  using algorithm::convert;
 }
