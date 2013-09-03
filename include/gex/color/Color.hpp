@@ -4,6 +4,7 @@
 #include <boost/mpl/int.hpp>
 #include "gex/misc.hpp"
 #include "gex/base/Model.hpp"
+#include "gex/base/Coords.hpp"
 #include <sstream>
 
 namespace gex
@@ -41,7 +42,7 @@ namespace gex
         BOOST_STATIC_ASSERT(dimensions() >= 3 && dimensions() <= 4);
         this->operator()(_r,_g,_b);
         if( dimensions() > 3 )
-          v_[3] = max();
+          a_[3] = max();
       }
       
       Color(component_type _r, component_type _g, component_type _b, component_type _a )
@@ -49,94 +50,83 @@ namespace gex
         BOOST_STATIC_ASSERT(dimensions() == 4);
         this->operator()(_r,_g,_b,_a);
       }
-      
+
+      template<typename COLOR>
+      Color(const COLOR& _color)
+      {
+        this->operator()(_color.r(),_color.g(),_color.b());
+        if (dimensions() == 4)
+          a_[3] = _color.dimensions() == 4 ? _color.a() : max();
+      }
+
       static const component_type max()
       {
         return max(component_type());
       }
       
-      const component_type& r() const
+      GEX_SCALAR_REF(r,0)
+      GEX_SCALAR_REF(g,1)
+      GEX_SCALAR_REF(b,2)
+
+      component_type& a()
       {
-        return v_[0];
+        checkIndex<3>();
+        return a_[3];
       }
-      
-      void r( const component_type& _value )
-      {
-        v_[0] = _value;
-      }
-      
-      const component_type& g() const
-      {
-        return v_[1];
-      }
-      
-      void g( const component_type& _value )
-      {
-        v_[1] = _value;
-      }
-      
-      const component_type& b() const
-      {
-        return v_[2];
-      }
-      
-      void b( const component_type& _value )
-      {
-        v_[2] = _value;
-      }
-      
+
       const component_type a() const
       {
         return a(boost::mpl::int_<dimensions()>());
       }
+
       void a( const component_type& _value )
       {
-        BOOST_STATIC_ASSERT(dimensions() >= 4);
-        v_[3] = _value;
+        checkIndex<3>();
+        a_[3] = _value;
       }
 
       const component_type* values() const
       {
-        return v_;
+        return a_;
       }
       component_type* values()
       {
-        return v_;
+        return a_;
       }
       operator const component_type*() const
       {
-        return v_.data();
+        return a_.data();
       }
       operator component_type*()
       {
-        return v_.data();
+        return a_.data();
       }
 
       void operator += ( const Color& _c )
       {
-        auto it = _c.v_.begin();
-        for (auto& c : v_)
+        auto it = _c.a_.begin();
+        for (auto& c : a_)
         {
           c += *it; ++it;
         }
       }
       void operator -= ( const Color& _c )
       {
-        auto it = _c.v_.begin();
-        for (auto& c : v_)
+        auto it = _c.a_.begin();
+        for (auto& c : a_)
         {
           c -= *it; ++it;
         }
       }
       void operator *= ( component_type _f )
       {  
-        for (auto& c : v_) c *= _f;
+        for (auto& c : a_) c *= _f;
       }
 
       friend Color operator*( const Color& _a, const component_type _f )
       {
         Color v(_a);
-        for (auto& c : v.v_) c *= _f;
+        for (auto& c : v.a_) c *= _f;
         return v;
       }
       friend Color operator*( const component_type _f, const Color& _a )
@@ -146,9 +136,9 @@ namespace gex
       friend Color operator*( const Color& _a, const Color& _b)
       {
         Color v;
-        auto aIt = _a.v_.begin(),
-             bIt = _b.v_.begin();
-        for (auto& c : v.v_) 
+        auto aIt = _a.a_.begin(),
+             bIt = _b.a_.begin();
+        for (auto& c : v.a_) 
         {
           c = (*aIt) * (*bIt);
           ++aIt; ++bIt;
@@ -158,9 +148,9 @@ namespace gex
       friend Color operator-( const Color& _a, const Color& _b)
       {
         Color v; 
-        auto aIt = _a.v_.begin(),
-             bIt = _b.v_.begin();
-        for (auto& c : v.v_) 
+        auto aIt = _a.a_.begin(),
+             bIt = _b.a_.begin();
+        for (auto& c : v.a_) 
         {
           c = (*aIt) - (*bIt);
           ++aIt; ++bIt;
@@ -170,9 +160,9 @@ namespace gex
       friend Color operator+( const Color& _a, const Color& _b)
       {
         Color v; 
-        auto aIt = _a.v_.begin(),
-             bIt = _b.v_.begin();
-        for (auto& c : v.v_) 
+        auto aIt = _a.a_.begin(),
+             bIt = _b.a_.begin();
+        for (auto& c : v.a_) 
         {
           c = (*aIt) + (*bIt);
           ++aIt; ++bIt;
@@ -182,7 +172,7 @@ namespace gex
 
       inline void operator()(const Color& _color)
       {
-        v_ = _color.v_;
+        a_ = _color.a_;
       }
 
       inline void operator()(component_type _r, component_type _g, component_type _b)
@@ -206,7 +196,7 @@ namespace gex
         /// @todo improve this
         for (size_t i = 0; i < _lhs.channels(); i++)
         {
-          float _diff = (_lhs.v_[i] - _rhs.v_[i]) / _lhs.max();
+          float _diff = (_lhs.a_[i] - _rhs.a_[i]) / _lhs.max();
           _sum += _diff * _diff;
         }
 
@@ -240,7 +230,7 @@ namespace gex
 
       const component_type a(boost::mpl::int_<4>) const
       {
-        return v_[3];
+        return a_[3];
       }
       const component_type a(boost::mpl::int_<3>) const
       {
@@ -251,7 +241,7 @@ namespace gex
       inline OSTREAM& format( OSTREAM& _s ) const
       {
         bool _f=true;
-        for( auto& _c : v_ )
+        for( auto& _c : a_ )
         {
           if( _f )
           {
@@ -283,8 +273,13 @@ namespace gex
         return _is;
       }
 
-    protected:
-      array_type v_;
+    private:
+      template<size_t INDEX>
+      static void checkIndex()
+      {
+        static_assert(dimensions() > INDEX,"Channel index must be smaller than number of channels.");
+      }
+      array_type a_;
     };
 
     template<class SCALAR=DEFAULT_COLOR_TYPE> using Color3 = Color<Model<3,SCALAR>>;

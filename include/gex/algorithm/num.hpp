@@ -1,3 +1,5 @@
+#pragma once
+
 #include <gex/prim.hpp>
 #include "for_each.hpp"
 
@@ -16,63 +18,67 @@ namespace gex
         }
       };
 
-      template<typename MODEL>
-      struct Num<base::Point<MODEL>,prim::Segment<MODEL>>
+      template<typename POINT>
+      struct Num<POINT,prim::Segment<POINT>>
       {
-        typedef prim::Segment<MODEL> primitive_type;
+        typedef prim::Segment<POINT> primitive_type;
         size_t operator()(const primitive_type& _prim)
         {
           return 2;
         }
       };
 
-      template<typename MODEL, typename PRIMITIVE>
-      struct Num<base::Point<MODEL>,PRIMITIVE>
+      template<typename POINT>
+      struct Num<POINT,prim::LineString<POINT>>
       {
-        typedef PRIMITIVE primitive_type;
-        size_t operator()(const primitive_type& _prim)
+        template<typename PRIM>
+        size_t operator()(const PRIM& _prim)
         {
           return _prim.size();
         }
       };
+
+      template<typename POINT>
+      struct Num<POINT,prim::Ring<POINT>> : 
+        Num<POINT,prim::LineString<POINT>> {};
+
       
-      template<typename SUB_PRIMITIVE, typename MODEL>
-      struct Num<SUB_PRIMITIVE,prim::MultiLineString<MODEL>>
+      template<typename SUB_PRIMITIVE, typename POINT>
+      struct Num<SUB_PRIMITIVE,prim::MultiLineString<POINT>>
       {
-        typedef prim::MultiLineString<MODEL> primitive_type;
+        typedef prim::MultiLineString<POINT> primitive_type;
         size_t operator()(const primitive_type& _prim)
         {
           size_t _num = 0;
           for (auto& _p : _prim)
-            _num += Num<SUB_PRIMITIVE,prim::LineString<MODEL>>(_p); 
+            _num += Num<SUB_PRIMITIVE,prim::LineString<POINT>>(_p); 
           return _num;
         }
       };
 
-      template<typename SUB_PRIMITIVE, typename MODEL>
-      struct Num<SUB_PRIMITIVE,prim::Polygon<MODEL>>
+      template<typename SUB_PRIMITIVE, typename RING>
+      struct Num<SUB_PRIMITIVE,prim::Polygon<RING>>
       {
-        typedef prim::Polygon<MODEL> primitive_type;
+        typedef prim::Polygon<RING> primitive_type;
         size_t operator()(const primitive_type& _prim)
         {
-          typedef prim::Ring<MODEL> ring_type;
           size_t _num = 0;
-          for_each<SUB_PRIMITIVE>(_prim,[&](const ring_type& _ring)
+          for_each<SUB_PRIMITIVE>(_prim,[&](const RING& _ring)
           {
-            _num += Num<SUB_PRIMITIVE,ring_type>()(_ring);
+            _num += Num<SUB_PRIMITIVE,RING>()(_ring);
           });
           return _num;
         }
       };
       
-      template<typename SUB_PRIMITIVE, typename MODEL>
-      struct Num<SUB_PRIMITIVE,prim::MultiPolygon<MODEL>>
+      template<typename SUB_PRIMITIVE, typename POLYGON>
+      struct Num<SUB_PRIMITIVE,prim::MultiPolygon<POLYGON>>
       {
-        typedef prim::MultiPolygon<MODEL> primitive_type;
+        typedef prim::MultiPolygon<POLYGON> primitive_type;
         size_t operator()(const primitive_type& _prim)
         {
           size_t _num = 0;
-          typedef prim::Ring<MODEL> ring_type;
+          typedef typename POLYGON::ring_type ring_type;
           for_each<ring_type>(_prim,[&](const ring_type& _r)
           {
             _num += Num<SUB_PRIMITIVE,ring_type>()(_r);
@@ -81,13 +87,13 @@ namespace gex
         }
       };
 
-      template<typename MODEL, typename PRIMITIVE>
-      struct Num<prim::Segment<MODEL>,PRIMITIVE>
+      template<typename POINT, typename PRIMITIVE>
+      struct Num<prim::Segment<POINT>,PRIMITIVE>
       {
         typedef PRIMITIVE primitive_type;
         size_t operator()(const primitive_type& _prim)
         {
-          return Num<base::Point<MODEL>,primitive_type>(_prim)-1;
+          return Num<POINT,primitive_type>(_prim)-1;
         }
       };
 
@@ -110,4 +116,5 @@ namespace gex
       return Num<SUB_PRIMITIVE,PRIMITIVE>()(_primitive);
     } 
   }
+  using algorithm::num;
 }

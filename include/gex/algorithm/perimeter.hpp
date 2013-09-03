@@ -67,4 +67,6 @@ namespace gex
       return _perimeter;
     }
   }
+
+  using algorithm::perimeter;
 }

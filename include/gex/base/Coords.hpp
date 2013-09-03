@@ -209,7 +209,7 @@ namespace gex
       template<size_t INDEX>
       static void checkIndex()
       {
-        static_assert(dimensions() > INDEX,"Number of dimension must be larger than coordinate index");
+        static_assert(dimensions() > INDEX,"Coordinate index must be smaller than number of dimensions.");
       }
       /// Array to store coordinate values
       array_type a_;

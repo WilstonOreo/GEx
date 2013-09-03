@@ -50,7 +50,7 @@ namespace gex
           if (_offset < 0.0) return;
           namespace bg = boost::geometry;
           namespace buf = bg::strategy::buffer;
-          buf::join_round<POINT,POINT> _joinStrategy;
+          buf::join_round<POINT,POINT> _joinStrategy(16);
           buf::end_round<POINT,POINT> _endStrategy;
           buf::distance_symmetric<OFFSET> _distanceStrategy(_offset);
           bg::buffer_inserter<polygon_type>(_lineString, std::back_inserter(_out),
