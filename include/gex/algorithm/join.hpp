@@ -5,30 +5,13 @@
 #include "connect.hpp"
 #include "reverse.hpp"
 #include <gex/index.hpp>
+#include "functor/Join.hpp"
+#include "functor/JoinSegmentsToRings.hpp"
 
 namespace gex
 {
   namespace algorithm
   {
-    namespace strategy 
-    {
-      struct Simple {};
-
-      struct Threshold 
-      {
-        Threshold(double _threshold) :
-          threshold_(_threshold) {}
-      
-        TBD_PROPERTY_REF(double,threshold)
-      };
-
-      struct ThresholdWithReverse : Threshold 
-      {
-        ThresholdWithReverse(double _threshold) :
-          Threshold(_threshold) {}
-      };
-    }
-
     namespace functor
     {
       namespace detail
@@ -136,9 +119,6 @@ namespace gex
         }
       }
 
-      template<typename IN_PRIMITIVE, typename OUT_PRIMITIVE, typename STRATEGY>
-      struct Join {};
-
       template<typename POINT>
       struct Join<prim::MultiSegment<POINT>,prim::MultiLineString<POINT>,strategy::Threshold>
       {
@@ -191,43 +171,6 @@ namespace gex
       struct Join<prim::MultiLineString<POINT>,prim::MultiLineString<POINT>,STRATEGY> : 
         Join<prim::MultiSegment<POINT>,prim::MultiLineString<POINT>,STRATEGY> {};
 
-      template<typename POINT>
-      struct Join<prim::MultiSegment<POINT>,prim::MultiRing<POINT>,strategy::Threshold>
-      {
-        template<typename IN, typename OUT, typename STRATEGY, typename JUNCTION>
-        void operator()(const IN& _in, OUT& _out, STRATEGY _strategy, JUNCTION _j)
-        {
-          auto _initEps = _strategy.threshold() * 0.0001;
-          typedef prim::MultiLineString<POINT> multilinestring_type;
-          multilinestring_type _lineStrings;
-          typedef prim::Ring<POINT> ring_type; 
-          
-          /// 1st Pass: Connect segments to line strings
-          Join<IN,multilinestring_type,STRATEGY>()(_in,_lineStrings,_strategy,_j);
-          
-          //TOMO_DBG("1st Pass: " << _in.size() << " " << _lineStrings.size())
-
-          /// 2nd Pass: Connect line strings to rings and increase epsilon threshold if necessary
-          while (!_lineStrings.empty() &&  _initEps < _strategy.threshold())
-          {
-            auto _it = _lineStrings.begin();
-            while ( _it != _lineStrings.end() )
-            {
-              auto _distance = sqrDistance(_it->back(),_it->front());
-              if (_distance <= _strategy.threshold())
-              {
-                _out.emplace_back(convert<ring_type>(*_it));
-                _it = _lineStrings.erase(_it);
-              } else { ++_it; }
-            }
-            _initEps *= 2;
-            multilinestring_type _newLineStrings;
-            Join<multilinestring_type,multilinestring_type,STRATEGY>()(_lineStrings,_newLineStrings,_strategy,_j);
-            _lineStrings = _newLineStrings;
-          }
-        }
-      };
-      
       template<typename POINT, typename POLYGON, typename STRATEGY>
       struct Join<prim::MultiRing<POINT>,prim::MultiPolygon<POLYGON>,STRATEGY> 
       {
@@ -255,6 +198,25 @@ namespace gex
       struct Join<prim::MultiLineString<POINT>,prim::MultiRing<POINT>,STRATEGY> : 
         Join<prim::MultiSegment<POINT>,prim::MultiRing<POINT>,STRATEGY> 
       {};
+
+      /// Join several linestrings to a single one
+      template<typename POINT>
+      struct Join<prim::MultiSegment<POINT>,prim::LineString<POINT>,strategy::Simple>
+      {
+      public:
+        template<typename IN, typename OUT, typename STRATEGY, typename JUNCTION_FUNCTOR>
+        void operator()(const IN& _in, OUT& _out, STRATEGY _strategy, JUNCTION_FUNCTOR _j)
+        {
+          for (auto& _prim : _in)
+          {
+            connect(_out,_prim,_j);
+          }
+        }
+      };
+
+      template<typename POINT, typename STRATEGY>
+      struct Join<prim::MultiLineString<POINT>,prim::LineString<POINT>,STRATEGY> :
+              Join<prim::MultiSegment<POINT>,prim::LineString<POINT>,STRATEGY> {};
     }
 
     using functor::Join;
@@ -262,7 +224,7 @@ namespace gex
     template<typename IN, typename OUT, typename STRATEGY, typename JUNCTION>
     void join(const IN& _in, OUT& _out, STRATEGY _strategy, JUNCTION _junction)
     {
-      Join<IN,OUT,typename std::decay<STRATEGY>::type>()(_in,_out,_strategy,_junction);
+      Join<IN,OUT,STRATEGY>()(_in,_out,_strategy,_junction);
     }
     
     template<typename IN, typename OUT, typename STRATEGY>

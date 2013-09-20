@@ -8,10 +8,10 @@ namespace gex
   {
     namespace svg
     {
-      template<typename MODEL>
-      struct Draw<base::Point<MODEL>>
+      template<>
+      struct Draw<Point2>
       {  
-        void operator()(const base::Point<MODEL>& _point, 
+        inline void operator()(const Point2& _point, 
                         const Style& _style, 
                         Buffer& _buffer,
                         float _radius = 5)

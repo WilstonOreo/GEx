@@ -1,7 +1,9 @@
 #pragma once
 
 #include <boost/geometry/algorithms/perimeter.hpp>
+#include <boost/geometry/algorithms/length.hpp>
 #include "for_each.hpp"
+#include "distance.hpp"
 
 namespace gex
 {
@@ -27,7 +29,7 @@ namespace gex
         template<typename PERIMETER>
         void operator()(const primitive_type& _seg, PERIMETER& _perimeter)
         {
-          _perimeter = (_seg.p1() - _seg.p0()).length(); 
+          _perimeter = distance(_seg.p0(),_seg.p1()); 
         }
       };
 

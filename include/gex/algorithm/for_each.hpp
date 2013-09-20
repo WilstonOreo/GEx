@@ -5,6 +5,7 @@
 #include "functor/ForEachPoint.hpp"
 #include "functor/ForEachPointPair.hpp"
 #include "functor/ForEachSegment.hpp"
+#include "functor/ForEachMesh.hpp"
 
 namespace gex
 {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "LineString.hpp"
-#include "gex/base/Point.hpp"
 #include "gex/base/Bounds.hpp"
 #include <boost/geometry/algorithms/perimeter.hpp>
 #include <boost/geometry/algorithms/envelope.hpp>
@@ -14,20 +13,20 @@ namespace gex
   namespace prim
   {
     template<class POINT>
-    struct Ring : std::vector<POINT>
+    struct Ring : base::VecContainer<POINT>
     {
       typedef POINT point_type;
-      typedef typename point_type::model_type model_type;
-      typedef typename point_type::scalar_type scalar_type;
-      typedef base::Bounds<model_type> bounds_type;
+      typedef base::Model<POINT::SizeAtCompileTime,typename POINT::Scalar> model_type;
+      typedef typename model_type::scalar_type scalar_type;
       typedef base::Vec<model_type> vec_type;
+      typedef base::Bounds<model_type> bounds_type;
       typedef base::Range<scalar_type> range_type;
 
     enum Location :
       unsigned char { INNER, OUTER };
     enum Orientation :
       unsigned char { CW , CCW };
-      typedef std::vector<point_type> ctnr_type;
+      typedef base::VecContainer<point_type> ctnr_type;
 
       template<typename BEGIN, typename END>
       Ring(BEGIN _begin, END _end) :
@@ -100,8 +99,8 @@ namespace gex
     {
       typedef Ring<POINT> primitive_type;
       typedef POINT point_type;
-      typedef typename point_type::scalar_type scalar_type;
-      typedef typename point_type::model_type model_type;
+      typedef base::Model<POINT::SizeAtCompileTime,typename POINT::Scalar> model_type;
+      typedef typename model_type::scalar_type scalar_type;
       typedef base::Range<scalar_type> range_type;
       typedef std::vector<point_type> ctnr_type;
       typedef base::Bounds<model_type> bounds_type;

@@ -20,27 +20,11 @@ typename POINT::scalar_type curvature(
   const POINT& _b,
   const POINT& _c)
 {
-  auto&& _v0 = (_c - _b).normalized();
-  auto&& _n = _a - _b;
-  _n(-_n.y(),_n.x());
-  _n.normalize();
-  return dot(_n,_v0);
 }
 
 template<typename PRIMITIVE, typename FUNCTOR>
 void for_each_curve(const PRIMITIVE& _primitive, FUNCTOR f)
 {
-  size_t _i = 0, _n = _primitive.size()-1; 
- // _primitive.size()-1;
-
-  while (_i < _n)
-  {
-    auto& _p0 = _primitive[_i];
-    auto& _p1 = _primitive[(_i+1) % _n];
-    auto& _p2 = _primitive[(_i+2) % _n];
-    f(_p0,_p1,_p2);
-    ++_i;
-  }
 }
 
 

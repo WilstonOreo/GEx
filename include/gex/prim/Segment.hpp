@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include "gex/base/Vec.hpp"
 #include "gex/base/Bounds.hpp"
 
 namespace gex
@@ -12,8 +11,8 @@ namespace gex
     struct Segment
     {
       typedef POINT point_type;
-      typedef typename point_type::model_type model_type;
-      typedef typename point_type::scalar_type scalar_type;
+      typedef base::Model<POINT::SizeAtCompileTime,typename POINT::Scalar> model_type;
+      typedef typename model_type::scalar_type scalar_type;
       typedef base::Vec<model_type> vec_type;
       typedef base::Bounds<model_type> bounds_type;
 
@@ -89,13 +88,6 @@ namespace gex
         std::swap(p_[0],p_[1]);
       }
 
-      template<class ARCHIVE>
-      void serialize( ARCHIVE& _ar, const unsigned int _fileVersion )
-      {
-        _ar & p_[0];
-        _ar & p_[1];
-      }
-
     private:
       std::array<point_type,2> p_;
     };
@@ -105,8 +97,8 @@ namespace gex
     {
       typedef Segment<POINT> primitive_type;
       typedef POINT point_type;
-      typedef typename point_type::scalar_type scalar_type;
-      typedef typename point_type::model_type model_type;
+      typedef base::Model<POINT::SizeAtCompileTime,typename POINT::Scalar> model_type;
+      typedef typename model_type::scalar_type scalar_type;
       typedef base::Range<scalar_type> range_type;
       typedef std::vector<point_type> ctnr_type;
       typedef base::Bounds<model_type> bounds_type;

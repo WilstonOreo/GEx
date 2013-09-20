@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Vec.hpp"
-#include "Point.hpp"
+#include "EigenTypedefs.hpp"
 
 namespace gex
 {

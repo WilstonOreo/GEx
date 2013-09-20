@@ -1,3 +1,6 @@
+#pragma once
+
+#include <gex/misc.hpp>
 #include "boost/geometry/extensions/algorithms/buffer/line_line_intersection.hpp"
 
 namespace gex
@@ -12,6 +15,16 @@ namespace gex
         auto&& _d = _p1 - _p0;
         return Vec2(-_d.y(),_d.x());
       }
+
+
+      template<typename ORIGIN, typename ANGLE, typename POINT>
+      void rotatePoint(const ORIGIN& _o, ANGLE _theta, POINT& _p)
+      {
+        auto _d = _p - _o;
+        _p.x() = cos(_theta) * _d.x() - sin(_theta) * _d.y() + _o.x();
+        _p.y() = sin(_theta) * _d.x() + cos(_theta) * _d.y() + _o.x();
+      }
+
 
       static inline constexpr double invPi2()
       {
@@ -45,12 +58,12 @@ namespace gex
           const POINT& _p4, 
           POINT& _point)
       {
-        typedef typename POINT::scalar_type scalar_type;
+        typedef typename POINT::Scalar scalar_type;
 
         // Store the values for fast access and easy
         // equations-to-code conversion
-        scalar_type x1 = _p1.x, x2 = _p2.x, x3 = _p3.x, x4 = _p4.x;
-        scalar_type y1 = _p1.y, y2 = _p2.y, y3 = _p3.y, y4 = _p4.y;
+        scalar_type x1 = _p1.x(), x2 = _p2.x(), x3 = _p3.x(), x4 = _p4.x();
+        scalar_type y1 = _p1.y(), y2 = _p2.y(), y3 = _p3.y(), y4 = _p4.y();
         scalar_type d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
         // If d is zero, there is no intersection
         if (d == 0) return false;
@@ -68,7 +81,7 @@ namespace gex
              y < std::min(y3, y4) || y > std::max(y3, y4) ) return false;
  
         // Return the point of intersection
-        _point(x,y);
+        _point(0) = x; _point(1) = y;
         return true;
       }
 

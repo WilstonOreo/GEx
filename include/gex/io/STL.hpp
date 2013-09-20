@@ -83,6 +83,7 @@ namespace gex
         typedef typename triangle_type::vec_type vec_type;
 
         vec_type _normal;
+        typedef typename vec_type::Scalar scalar_type;
         triangle_type _tri;
         std::string _token, _ignore;
 
@@ -104,7 +105,10 @@ namespace gex
           // Normal found
           if (_token == "normal")
           {
-            for (auto& _s : _normal.data()) _in >> _s;
+            base::for_each_dim(_normal,[&_in](scalar_type& _s, size_t i) 
+            {
+              _in >> _s;
+            });
           }
 
           // Triangle found
@@ -113,7 +117,10 @@ namespace gex
             for (auto& _p : _tri.points())
             {
               _in >> _ignore;
-              for (auto& _s : _p.data()) _in >> _s;
+              base::for_each_dim(_p,[&_in](scalar_type& _s, size_t i) 
+              {
+                _in >> _s;
+              });
             }
             _tri.normal(_normal);
             _triangles.push_back(_tri);
@@ -158,15 +165,19 @@ namespace gex
 
           triangle_type _tri;
           vec_type _normal;
+          typedef typename vec_type::Scalar scalar_type;
 
-          for (auto& _s : _normal.data())
+          base::for_each_dim(_normal,[this,&_in](scalar_type& _s, size_t i)
+          {
             _s = readFloat(_in);
+          });
 
-          _tri.normal(_normal);
-
+          _tri.normal(_normal);          
           for (auto& _p : _tri.points())
-            for (auto& _s : _p.data())
+            base::for_each_dim(_p,[this,&_in](scalar_type& _s, size_t i)
+            {
               _s = readFloat(_in);
+            });
 
           _in.seekg(2,std::ios_base::cur);
 

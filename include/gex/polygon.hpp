@@ -11,6 +11,7 @@ namespace gex
     typedef boost::polygon::polygon_data<int> Ring;
     typedef boost::polygon::polygon_with_holes_data<int> Polygon;
     typedef boost::polygon::polygon_traits<Polygon>::point_type Point;
+    typedef boost::polygon::polygon_set_data<int> MultiPolygon;
 
     template<typename PRIMITIVE>
     struct Adapter {};
@@ -42,6 +43,8 @@ namespace gex
     GEX_POLYGON_ADAPT_TYPE(polygon::Ring,gex::Ring)
     GEX_POLYGON_ADAPT_TYPE(gex::Polygon,polygon::Polygon)
     GEX_POLYGON_ADAPT_TYPE(polygon::Polygon,gex::Polygon)
+    GEX_POLYGON_ADAPT_TYPE(gex::MultiPolygon,polygon::MultiPolygon)
+    GEX_POLYGON_ADAPT_TYPE(polygon::MultiPolygon,gex::MultiPolygon)
 
     template<typename PRIMITIVE>
     void adapt(const PRIMITIVE& _in, const gex::Bounds2& _bounds, typename AdaptType<PRIMITIVE>::type& _out)
@@ -56,10 +59,11 @@ namespace gex
       adapt<PRIMITIVE>(_in,_bounds,_out);
       return _out;
     }
+    
+    static inline gex::Scalar size() { return 1 << 15; }
 
     namespace 
     {
-      static inline gex::Scalar size() { return 1 << 15; }
 
       static inline gex::Bounds2 bounds()
       {
@@ -141,7 +145,7 @@ namespace gex
 
     GEX_POLYGON_ADAPTER(gex::Polygon)
     {
-      auto&& _points = points(_in.boundary(),_in.boundary().bounds());
+      auto&& _points = points(_in.boundary(),_bounds);
       _out.set(_points.begin(),_points.end());
       
       std::vector<polygon::Ring> _holes;
@@ -152,13 +156,42 @@ namespace gex
       _out.set_holes(_holes.begin(),_holes.end());
     }
 
+
     GEX_POLYGON_ADAPTER(polygon::Polygon)
     {
-      _out = gex::Polygon(adapt(_in.self_,_bounds));
+      _out.boundary().clear();
+      for (auto it = _in.begin() ; it != _in.end(); ++it)
+      {
+        _out.boundary().push_back(adapt(*it,_bounds));
+      }
+
+      _out.holes().clear();
       for (auto it = _in.begin_holes(); it != _in.end_holes(); ++it)
       {
         _out.holes().push_back(adapt(*it,_bounds));
       }
+    }
+
+
+    GEX_POLYGON_ADAPTER(gex::MultiPolygon)
+    {
+      std::vector<polygon::Polygon> _polygons;
+      for (auto& _polygon : _in)
+      {
+        _polygons.push_back(adapt(_polygon,_bounds));
+      }
+      _out.insert(_polygons.begin(),_polygons.end());
+    }
+
+
+    GEX_POLYGON_ADAPTER(polygon::MultiPolygon)
+    {
+      std::vector<polygon::Polygon> _polygons;
+      _in.get(_polygons);
+
+      _out.clear();
+      for (auto& _polygon : _polygons)
+        _out.push_back(adapt(_polygon,_bounds));
     }
   }
 }

@@ -8,25 +8,14 @@
 #include <gex/index.hpp>
 #include <gex/algorithm/boost.hpp>
 #include <gex/algorithm/intersection.hpp>
-
-int rndColorComp()
-{
-  return int(gex::rnd()*255);
-}
-
-std::string randomColor()
-{
-  std::stringstream ss;
-  ss << "rgb(" << rndColorComp() << "," << rndColorComp() << "," << rndColorComp() << ")";
-  return ss.str();
-}
+#include <gex/io/svg/RandomColor.hpp>
 
 template<typename PRIMITIVES>
 void drawWithRandomColor(gex::io::SVG& _svg, const PRIMITIVES& _primitives)
 {
   for (auto& _primitive : _primitives)
   {
-    _svg.draw(_primitive,"stroke:"+randomColor()+";fill:none");
+    _svg.draw(_primitive,"stroke:"+gex::io::svg::randomColor()+";fill:none");
   }
 }
 

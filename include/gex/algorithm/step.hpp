@@ -1,7 +1,8 @@
 #pragma once
 
-#include <gex/algorithm/for_each.hpp>
-#include <gex/algorithm/perimeter.hpp>
+#include "for_each.hpp"
+#include "perimeter.hpp"
+#include "distance.hpp"
 
 namespace gex
 {
@@ -65,7 +66,7 @@ namespace gex
           typedef std::pair<POINT,POINT> pointpair_type;
           for_each_point_pair_range(_begin,_end,[&](const POINT& _p0, const POINT& _p1)
           {
-            auto&& _segmentLength = (_p1 - _p0).length();
+            auto&& _segmentLength = distance(_p0,_p1);
             auto&& _length = _segmentLength * _invLength;
             _segmentMarkers.clear();
             auto _lower = std::lower_bound(_markers.begin(),_markers.end(),_d),
@@ -96,6 +97,7 @@ namespace gex
           POINT_FUNCTOR pf)
         {
           step_range<POINT>(_ls.begin(),_ls.end(),perimeter(_ls),_markers,sf,pf);
+          sf(_ls.back());
         }
       };
 
@@ -111,7 +113,7 @@ namespace gex
           SEGMENT_FUNCTOR sf,
           POINT_FUNCTOR pf)
         {
-          step_range<POINT>(_ring.begin(),_ring.end(),_ring.length(),_markers,sf,pf);
+          step_range<POINT>(_ring.begin(),_ring.end(),boost::geometry::perimeter(_ring),_markers,sf,pf);
         }
       };
     }

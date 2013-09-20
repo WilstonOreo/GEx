@@ -2,7 +2,7 @@
 #define _POLARVEC_HPP
 
 #include "Model.hpp"
-#include "Vec.hpp"
+#include "EigenTypedefs.hpp"
 
 namespace gex
 {
@@ -43,7 +43,7 @@ namespace gex
         }
         const PolarVec& operator=( const Vec& _vec )
         {
-          radius_ = _vec.length();
+          radius_ = _vec.norm();
           // calculate phi and theta
           // (@link http://de.wikipedia.org/wiki/Kugelkoordinaten#.C3.9Cbliche_Konvention)
           longitude_ = gex::rad2deg( atan2(_vec.y(), _vec.x()) );
@@ -83,7 +83,7 @@ namespace gex
           */
         operator Vec4() const
         {
-          return Vec4(*this,DEFAULT_COORD_ONE?1.0:0.0);
+          return Vec4(this->x(),this->y(),this->z(),DEFAULT_COORD_ONE?1.0:0.0);
         }
         /** @brief add another polar vector
           * @param _vec other vector

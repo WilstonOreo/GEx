@@ -14,7 +14,6 @@ namespace gex
       typedef base::Point<model_type> point_type;
       typedef base::Bounds<model_type> bounds_type;
       typedef base::Model<4,scalar_type> matrix_model_type;
-      typedef base::Matrix<matrix_model_type> matrix_type;
 
       typedef prim::Triangle<point_type> triangle_type;
       typedef std::vector<triangle_type> triangle_cont_type;
@@ -39,7 +38,6 @@ namespace gex
         return triangles_;
       }
 
-      TBD_PROPERTY_REF(matrix_type,matrix)
       TBD_PROPERTY_REF_RO(triangle_cont_type,triangles)
       TBD_PROPERTY_REF_RO(bounds_type,bounds)
       TBD_PROPERTY_RO(bool,correct)

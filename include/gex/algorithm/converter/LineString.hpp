@@ -10,10 +10,10 @@ namespace gex
     namespace converter
     {
       /// Converts a line string to points
-      template<typename MODEL>
-      struct Converter<prim::LineString<MODEL>,std::vector<typename prim::LineString<MODEL>::point_type>>
+      template<typename POINT>
+      struct Converter<prim::LineString<POINT>,prim::MultiPoint<POINT>>
       {
-        typedef prim::LineString<MODEL> linestring_type;
+        typedef prim::LineString<POINT> linestring_type;
         typedef std::vector<typename linestring_type::point_type> points_type;
 
         void operator()(const linestring_type& _in, points_type& _out)
@@ -27,11 +27,11 @@ namespace gex
       };
 
       /// Convert a line string to a ring
-      template<typename MODEL>
-      struct Converter<prim::LineString<MODEL>,prim::Ring<MODEL>>
+      template<typename POINT>
+      struct Converter<prim::LineString<POINT>,prim::Ring<POINT>>
       {
-        typedef prim::LineString<MODEL> linestring_type;
-        typedef prim::Ring<MODEL> ring_type;
+        typedef prim::LineString<POINT> linestring_type;
+        typedef prim::Ring<POINT> ring_type;
 
         void operator()(const linestring_type& _in, ring_type& _out)
         {
@@ -40,30 +40,17 @@ namespace gex
       };
 
       /// Convert a linestring into a vector of segments
-      template<typename MODEL>
-      struct Converter<prim::LineString<MODEL>,std::vector<prim::Segment<MODEL>>>
+      template<typename PRIMITIVE, typename POINT>
+      struct Converter<PRIMITIVE,prim::MultiSegment<POINT>>
       {
-        typedef prim::LineString<MODEL> linestring_type;
-        typedef std::vector<prim::Segment<MODEL>> segments_type;
+        typedef prim::MultiSegment<POINT> segments_type;
 
-        void operator()(const linestring_type& _in, segments_type& _out)
+        void operator()(const PRIMITIVE& _in, segments_type& _out)
         {
-          _out.clear();
-          boost::geometry::for_each_segment(_in,
-            detail::SegmentConverter<prim::Segment<MODEL>>(_out));
-        }
-      };
-
-      /// Convert a line string into a polygon 
-      template<typename MODEL>
-      struct Converter<prim::LineString<MODEL>,prim::Polygon<MODEL>>
-      {
-        typedef prim::LineString<MODEL> linestring_type;
-        typedef prim::Polygon<MODEL> polygon_type;
-
-        void operator()(const linestring_type& _in, polygon_type& _out)
-        {
-          _out = convert<prim::Polygon<MODEL>>(convert<prim::Ring<MODEL>>(_in));
+          for_each<prim::Segment<POINT>>(_in,[&](const prim::Segment<POINT>& _segment)
+          {
+            _out.push_back(_segment);
+          });
         }
       };
 

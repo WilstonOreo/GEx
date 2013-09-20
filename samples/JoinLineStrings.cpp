@@ -1,5 +1,6 @@
-#include <gex/algorithm/join.hpp>
 
+#include <gex/io/SVG.hpp>
+#include <gex/algorithm/join.hpp>
 
 namespace gex
 {
@@ -12,7 +13,7 @@ namespace gex
                  double _holeFactor,
                  const MULTIPOLYGON& _map) :
         boundaryFactor_(_boundaryFactor),
-        holeFactor_(_holeFactor)
+        holeFactor_(_holeFactor),
         map_(_map) {}
 
       template<typename A, typename B>
@@ -25,81 +26,121 @@ namespace gex
       double boundaryFactor_, holeFactor_;
       const MULTIPOLYGON& map_;
     };
-  }
 
-  namespace functor
-  {
-    namespace detail
+    namespace functor
     {
-      template<typename PRIMITIVE>
-      struct Candidate
+      namespace detail
       {
-        Candidate(PRIMITIVE* _a, PRIMITIVE* _b, _junctionLength) :
-          a_(_a), b_(_b), junctionLength_(_junctionLength) {}
-
-        friend bool operator<(const Candidate& _a, const Candidate& _b)
+        template<typename PRIMITIVE>
+        struct Candidate
         {
-          return _a.junctionLength() < _b.junctionLength();
-        }
+          Candidate(PRIMITIVE* _a, PRIMITIVE* _b, float _junctionLength) :
+            a_(_a), b_(_b), junctionLength_(_junctionLength) {}
 
-        TBD_PROPERTY(float,junctionLength)
-        TBD_PROPERTY(PRIMITIVE*,a)
-        TBD_PROPERTY(PRIMITIVE*,b)
-      };
-    }
+          friend bool operator<(const Candidate& _a, const Candidate& _b)
+          {
+            return _a.junctionLength() < _b.junctionLength();
+          }
 
-
-    template<typename POINT>
-    struct Join<prim::MultiSegment<POINT>,prim::LineString<POINT>,strategy::Simple>
-    {
-    public:
-      template<typename IN, typename OUT, typename JUNCTION_FUNCTOR>
-      void operator()(const IN& _in, OUT& _out, JUNCTION_FUNCTOR _j)
-      {
-        typedef typename IN::value_type primitive_type;
-        typedef detail::Candidate<primitive_type> candidate_type;
-
-for (auto& _prim : _in)
-        {
-          connect(_prim,_out,_j);
-        }
+          TBD_PROPERTY(float,junctionLength)
+          TBD_PROPERTY(PRIMITIVE*,a)
+          TBD_PROPERTY(PRIMITIVE*,b)
+        };
       }
     };
-
-    template<typename POINT>
-    struct Join<prim::MultiLineString<POINT>,prim::LineString<POINT>> :
-            Join<prim::MultiSegment<POINT>,prim::LineString<POINT>>;
-  };
-}
+  }
 }
 
-#include "create.hpp"
+#include <gex/io/read.hpp>
+#include <boost/filesystem.hpp>
+
+
+template<typename PATH>
+std::vector<std::string> filesWithExt( const PATH& _path,         // in this directory,
+                                       const std::string& _fileExt ) // search for this name,
+{
+  using namespace boost::filesystem;
+  auto&& _upperExt = boost::algorithm::to_upper_copy(_fileExt);
+  std::vector<std::string> _files;
+  if ( !exists( _path ) ) return _files;
+  directory_iterator end_itr;
+  for ( directory_iterator itr( _path );
+        itr != end_itr;
+        ++itr )
+  {
+    auto&& _upper = boost::algorithm::to_upper_copy(itr->path().string());
+    if ( is_directory(itr->status()) )
+    {
+      auto&& _dirFiles = filesWithExt( itr->path(), _fileExt );
+for (auto& _dirFile : _dirFiles)
+        _files.push_back(_dirFile);
+    }
+    else if ( boost::algorithm::ends_with(_upper,_upperExt) )
+    {
+      _files.push_back(itr->path().string());
+    }
+  }
+  return _files;
+}
+
 
 int main(int argc, char* argv[])
 {
-  gex::io::SVG _svg;
-  using gex::Point2;
-  auto&& _circle = create::circle(Point2(),10,false,42);
-  auto _bounds = _circle.bounds();
-  _svg.buffer().fit(_bounds);
-  auto&& _circleWithHoles = create::circleWith3Holes(Point2(),7,false,12);
+  if (argc < 2) return EXIT_FAILURE;
 
-  _svg.draw(_star,"stroke:orange;fill:none");
+  using namespace gex;
+  auto&& _wkts = filesWithExt(argv[1],".wkt");
 
-  auto&& _skeleton = gex::skeleton(_star);
-  _svg.draw(_skeleton,"stroke:white;fill:none");
 
-//  auto&& _voronoi = gex::voronoi(_star);
-//  _svg.draw(_voronoi,"stroke:yellow;fill:none");
+  std::sort(_wkts.begin(),_wkts.end());
+  
+  size_t _number = 0;
+  
+  for (auto& _wkt : _wkts)
+  {
+    io::SVG _svg;
+    MultiLineString _lineStrings;
+    io::readWkt(_wkt,_lineStrings);
 
-  gex::Scalar _offset = 3.0;
+    auto&& _segments = convert<MultiSegment>(_lineStrings);
+    
+    using gex::Point2;
+    gex::Bounds2 _bounds;
+    gex::for_each<gex::Point2>(_lineStrings,[&](const gex::Point2& _point)
+    {
+      _bounds.extend(_point);
+    });
+    auto&& _center = _bounds.center();
+    auto&& _max = (_bounds.size()(X) + _bounds.size()(Y)) / 2.0;
+    Vec2 _m(_max,_max);
 
-  auto&& _inner = gex::offset(_star,-_offset/4.0);
-  _svg.draw(_inner,"stroke:blue;fill:none");
+    _svg.buffer().fit(Bounds2(_center - _m,_center + _m));
+    
+    std::stringstream _ss;
+    _ss << std::setw(5) << std::setfill('0') << _number; 
 
-  auto&& _thickened = gex::thicken(_star,_offset);
-  _svg.draw(_thickened,"stroke:green;fill:none");
-  _svg.buffer().write("Thicken.svg");
+    gex::MultiRing _rings;
+
+    _lineStrings.clear();
+
+    _svg.draw(_segments,"stroke:red;fill:none");
+    _svg.buffer().write(_ss.str()+"_segments.svg");
+    _svg.clear();
+
+    using namespace gex;
+
+    typedef algorithm::strategy::DefectRings<Point2> strategy_type;
+    typedef algorithm::junction::Straight<LineString,LineString> junction_type;
+    
+    algorithm::Join<gex::MultiSegment,gex::MultiRing,strategy_type> _join;
+    _join(_segments,_rings,strategy_type(_lineStrings,0.0000000001,0.1),junction_type());
+    
+    _svg.draw(_rings,"stroke:green;fill:none");
+    _svg.draw(_lineStrings,"stroke:orange;fill:none");
+    _svg.buffer().write(_ss.str()+"_rings.svg");
+//    _svg.buffer().write("JoinLineStrings_02_linestring.svg");*/
+    _number++;
+  }
 
   return EXIT_SUCCESS;
 }

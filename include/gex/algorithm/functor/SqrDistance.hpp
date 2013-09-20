@@ -12,7 +12,7 @@ namespace gex
       /** @brief Generic template functor for calculating the squared distance
        *  @detail Returns always inf
        */
-      template<typename A, typename B, typename RESULT = typename A::scalar_type>
+      template<typename A, typename B, typename RESULT = Scalar>
       struct SqrDistance
       {
         RESULT operator()(const A& _a, const B& _b)
@@ -25,15 +25,25 @@ namespace gex
        * base::Point distances
        ********************************************/
       /// Calculates squared distance between two points
-      template<typename MODEL>
-      struct SqrDistance<base::Point<MODEL>,base::Point<MODEL>,
-          typename MODEL::scalar_type>
+      template<>
+      struct SqrDistance<Point2,Point2,Scalar>
       {
-        typedef base::Point<MODEL> point_type;
-        typename MODEL::scalar_type
-        operator()(const point_type& _a, const point_type& _b)
+        typedef Point2 point_type;
+        typedef Scalar scalar_type;
+        inline Scalar operator()(const point_type& _a, const point_type& _b)
         {
-          return (_a - _b).sqrLength();
+          return (_a - _b).squaredNorm();
+        }
+      };
+      
+      template<>
+      struct SqrDistance<Point3,Point3,Scalar>
+      {
+        typedef Point3 point_type;
+        typedef Scalar scalar_type;
+        inline Scalar operator()(const point_type& _a, const point_type& _b)
+        {
+          return (_a - _b).squaredNorm();
         }
       };
 
@@ -42,6 +52,7 @@ namespace gex
       struct SqrDistance<base::Point<MODEL>,base::Bounds<MODEL>,
           typename MODEL::scalar_type>
       {
+        typedef typename MODEL::scalar_type scalar_type;
         typedef base::Point<MODEL> point_type;
         typedef base::Bounds<MODEL> bounds_type;
 

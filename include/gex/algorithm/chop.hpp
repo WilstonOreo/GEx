@@ -30,7 +30,7 @@ namespace gex
           [&](const point_type& _p)
           {
             _seg[_mode] = _p;
-            if ((_seg.p1() - _seg.p0()).length() > 0)
+            if (distance(_seg.p0(),_seg.p1()) > 0)
             {
               _out.push_back(_seg);
               if (!_mode)
@@ -70,10 +70,8 @@ namespace gex
             _out.push_back(_lineString);
             return;
           }
-          MARKERS _newMarkers = _markers; 
-          _newMarkers.push_back(1.0);
           output_type _ls;
-          step(_lineString,_newMarkers,
+          step(_lineString,_markers,
           [&](const point_type& _p)
           {
             _ls.push_back(_p);

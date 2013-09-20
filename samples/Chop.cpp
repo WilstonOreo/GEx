@@ -8,18 +8,21 @@
 
 using namespace gex;
 
-void linestringTest(gex::io::SVG& _svg, gex::LineString& _lineString)
+void linestringTest(gex::io::SVG& _svg, gex::LineString& _ls)
 {
   typedef std::vector<gex::Scalar> Markers;
-  Markers _markers({0.25,0.3333,0.5,0.75,0.9,0.95});
+  Markers _markers({0.25,0.3333,0.5,0.75});
   _svg.clear();
   size_t _markerId = 0;
-  _svg.draw(_lineString,"stroke:red;fill:none");
+  _svg.draw(_ls,"stroke:red;fill:none");
 
-  auto&& _lineStrings = gex::algorithm::chop(_lineString,_markers);
-  gex::algorithm::step(_lineString,_markers,[&](const Point2& _p)
+  auto&& _lineStrings = gex::algorithm::chop(_ls,_markers);
+
+  std::cout << "LineStrings: " << _lineStrings.size() << std::endl;
+
+  gex::algorithm::step(_ls,_markers,[&](const Point2& _p)
   {
-    _svg.buffer().text(_p,_markers[_markerId],"stroke:orange;fill:none");
+    _svg.buffer().text(_p,_markerId < _markers.size() ? _markers[_markerId] : 0.0,"stroke:orange;fill:none");
     _svg.draw(_p,"stroke:orange;fill:none");
     _markerId++;
   },
@@ -28,8 +31,6 @@ void linestringTest(gex::io::SVG& _svg, gex::LineString& _lineString)
     _svg.draw(_p,"stroke:blue;fill:none");
   });
 
-
-  
   for (size_t i = 0; i < _lineStrings.size(); ++i)
   {
     auto& _lineString = _lineStrings[i];
@@ -39,6 +40,8 @@ void linestringTest(gex::io::SVG& _svg, gex::LineString& _lineString)
       _offset = -_offset;
     }
     
+    std::cout << "\tLineString size: " << _lineString.size() << std::endl;
+
     for (auto& _p : _lineString) 
       _p += _offset;
     _svg.draw(_lineString,"stroke:orange;fill:none");
@@ -56,7 +59,7 @@ int main(int argc, char* argv[])
   auto _bounds = _circle.bounds();
   _svg.buffer().fit(_bounds);
   
-  _circle = create::circle(gex::Point2(0,0),8,false,7);
+  _circle = create::circle(gex::Point2(0,0),8,false,10);
   
   /*//  _circle = create::irregular(gex::Point2(),5,false,16);
     _circle = create::star(gex::Point2(),4,7,false,40);

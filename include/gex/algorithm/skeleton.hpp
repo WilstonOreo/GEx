@@ -75,7 +75,7 @@ namespace gex
           auto&& _voronoi = voronoi(_ring);
           auto&& _segments = detail::skeleton_remove_segments_from_voronoi(_ring,_voronoi);
           
-          join(_segments,_skeleton,0.0001);
+          join(_segments,_skeleton,strategy::ThresholdWithReverse(0.0001));
           
           //_skeleton = convert<output_type>(_segments);
         }
@@ -94,7 +94,7 @@ namespace gex
           auto&& _voronoi = voronoi(_polygon);
           auto&& _segments = detail::skeleton_remove_segments_from_voronoi(_polygon,_voronoi);
           //_skeleton = convert<output_type>(_segments);
-          join(_segments,_skeleton,0.0001);
+          join(_segments,_skeleton,strategy::ThresholdWithReverse(0.0001));
         }
       };
     }

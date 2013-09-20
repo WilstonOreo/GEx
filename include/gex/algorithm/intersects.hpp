@@ -44,7 +44,7 @@ namespace gex
 
         bool operator()(const range_type& _a, const range_type& _b)
         {
-          return (_a.min() >= _b.max() ||
+          return !(_a.min() >= _b.max() ||
                 _a.max() <= _b.min());
         }
       };
@@ -62,17 +62,18 @@ namespace gex
         }
       };
 
-
       template<typename A, typename B>
       bool intersects(const A& _a, const B& _b)
       {
         return Intersects<A,B>()(_a,_b);
       }
-
+/*
       template<typename A, typename B>
       bool operator&&(const A& _a, const B& _b)
       {
         return intersects(_a,_b);
-      }
+      }*/
     }
+
+    using algorithm::intersects;
   }

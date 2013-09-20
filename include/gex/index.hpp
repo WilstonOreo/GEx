@@ -31,17 +31,6 @@ namespace gex
       }
     };
 
-    template<typename MODEL>
-    struct Indexable<base::Point<MODEL>>
-    {
-      typedef base::Point<MODEL> type;
-    
-      type operator()(const base::Point<MODEL>& _point)
-      {
-        return _point;
-      } 
-    };
-
     template<typename INDEXABLE, typename VALUE>
     using RTreeNode = std::pair<INDEXABLE,VALUE>;
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gex/base/Vec.hpp"
 #include "gex/base/Bounds.hpp"
 
 namespace gex
@@ -11,8 +10,8 @@ namespace gex
     struct Triangle
     {
       typedef POINT point_type;
-      typedef typename point_type::model_type model_type; 
-      typedef typename point_type::scalar_type scalar_type;
+      typedef base::Model<POINT::SizeAtCompileTime,typename POINT::Scalar> model_type;
+      typedef typename model_type::scalar_type scalar_type;
       typedef base::Vec<model_type> vec_type;
       typedef base::Bounds<model_type> bounds_type;
       typedef std::array<point_type,3> points_type;
@@ -45,8 +44,8 @@ namespace gex
 
       void normal(const vec_type& _n)
       {
-        normal_ = (_n.sqrLength() != 0) ? _n :
-                  cross(points_[1] - points_[0],points_[2] - points_[0]);
+        normal_ = (_n.squaredNorm() != 0) ? _n :
+                  (points_[1] - points_[0]).cross(points_[2] - points_[0]);
       }
 
       TBD_PROPERTY_REF(points_type,points)

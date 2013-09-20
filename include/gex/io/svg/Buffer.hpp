@@ -15,7 +15,7 @@ namespace gex
       {
         typedef Point2 point_type;
         typedef Vec2 vec_type;
-        typedef typename point_type::scalar_type scalar_type;
+        typedef Scalar scalar_type;
         typedef Style style_type;
         typedef Color color_type;
 
@@ -88,14 +88,15 @@ namespace gex
         template<typename VEC>
         vec_type scaleVec(const VEC& _p) const
         {
-          return vec_type(_p) * scale_;
+          return vec_type(_p.x() * scale_.x(),_p.y()*scale_.y());
         }
 
         template<typename RECT>
         void fit(const RECT& _rect)
         {
           scale(vec_type(width_ / _rect.size().x(), height_ / _rect.size().y()));
-          offset(-_rect.min()*scale());
+          offset_(0) = -_rect.min().x()*scale().x();
+          offset_(1) = -_rect.min().y()*scale().y();
         }
 
         TBD_PROPERTY_RO(int,width)

@@ -2,82 +2,9 @@
 #include "create.hpp"
 #include <gex/algorithm/offset.hpp>
 #include <gex/algorithm/within.hpp>
+#include <gex/algorithm/util.hpp>
+#include <gex/algorithm/functor/detail/generateJunction.hpp>
 #include <gex/io.hpp>
-
-
-template<typename POINT, typename RING>
-void generateJunction( const POINT& _p0,
-                       const POINT& _p1,
-                       const POINT& _p2,
-                       typename POINT::scalar_type _offset,
-                       typename POINT::scalar_type _limit,
-                       RING& _ring, gex::io::SVG& _svg)
-{
-  typedef POINT point_type;
-  typedef typename POINT::scalar_type scalar_type;
-  typedef typename RING::vec_type vec_type;
-
-  using namespace gex::algorithm::functor;
-
-  _ring.clear();
-  if ((_p0 - _p1).length() < _limit)
-    return;
-
-  gex::base::Vec2d _n0 = detail::getNormal(_p0,_p1),
-                   _n1 = detail::getNormal(_p1,_p2);
-  _n0.normalize();
-  _n1.normalize();
-
-  vec_type _sn0(_n0); _sn0 *= _offset;
-  vec_type _sn1(_n1); _sn1 *= _offset;
-  
-  _ring.clear();
-  _ring.push_back(_p0 + _sn0);
-  double _a0 = std::atan2(_n1.y(),_n1.x()),
-         _a1 = std::atan2(_n0.y(),_n0.x());
-
-  if (_offset > 0 && _a1 < _a0) _a1 += M_PI * 2.0;
-  else if (_offset < 0 && _a1 > _a0) _a1 -= M_PI * 2.0;
-
-  if (_offset < 0)
-  {
-    std::swap(_a0,_a1);
-  }
-
-  if (_a1 - _a0 < M_PI)
-  {
-    if (_offset < 0) std::swap(_a0,_a1);
-    detail::buildArc(_p1,_a1,_a0,_offset,_limit,_ring);
-  }
-  else
-  {
-    gex::Segment _seg0(_p0 + _sn0,
-                       _p1 + _sn0),
-                 _seg1(_p1 + _sn1,
-                       _p2 + _sn1);
-    //_svg.draw(_seg0,"stroke:orange;fill:none");
-   // _svg.draw(_seg1,"stroke:yellow;fill:none");
-
-    gex::Point2 _iPoint;
-    if (detail::lineSegmentIntersection(_seg0,_seg1,_iPoint,_limit))
-    {
-     // _svg.draw(_iPoint,"stroke:green;fill:none");
-      _ring.push_back(_iPoint);
-    }
-    else
-    {
-      _ring.clear();
-      return;
-    }
-  }
-
-  _svg.draw(_ring,"stroke:orange;fill:none");
-
-  _ring.push_back((_p2 + _sn1 + _p1).vec()*0.5);
-  _ring.push_back(_p1);
-  _ring.push_back(_p0);
-  _ring.update();
-}
 
 template<typename RING, typename OFFSET, typename LIMIT>
 void rawOffsetRing(    const RING& _in,
@@ -116,11 +43,12 @@ void rawOffsetRing(    const RING& _in,
     }
     ++_it;
 
-    if ((_p0 - _p1).length() < _limit)
+    if ((_p0 - _p1).norm() < _limit)
       return;
 
-    auto _n0 = detail::getNormal(_p0,_p1).normalized(),
-         _n1 = detail::getNormal(_p1,_p2).normalized();
+    using namespace gex::algorithm;
+    auto _n0 = util::getNormal(_p0,_p1).normalized(),
+         _n1 = util::getNormal(_p1,_p2).normalized();
 
 //   _out.push_back(_p0 + _offset*_n0);
     scalar_type _a0 = std::atan2(_n1.y(),_n1.x()),
@@ -137,7 +65,7 @@ void rawOffsetRing(    const RING& _in,
     if (_a1 - _a0 < M_PI)
     {
       if (_offset < 0) std::swap(_a0,_a1);
-      detail::buildArc(_p1,_a1,_a0,_offset,_limit,_out);
+      functor::detail::buildArc(_p1,_a1,_a0,_offset,_limit,_out);
     }
     else
     {
@@ -149,7 +77,7 @@ void rawOffsetRing(    const RING& _in,
    //   _svg.draw(_seg1,"stroke:yellow;fill:none");
 
       gex::Point2 _iPoint;
-      if (detail::lineSegmentIntersection(_seg0,_seg1,_iPoint,_limit * 0.0001))
+      if (util::lineSegmentIntersection(_seg0.p0(),_seg0.p1(),_seg1.p0(),_seg1.p1(),_iPoint))
       {
         //_svg.draw(_seg0,"stroke:orange;fill:none");
      //   _svg.draw(_iPoint,"stroke:green;fill:none");
@@ -184,7 +112,7 @@ void offsetRing(const RING& _ring,
     return;
   }
 
-  auto _limit = _ring.bounds().size().length() * _eps;
+  auto _limit = _ring.bounds().size().norm() * _eps;
 
   RING _simpleRing;
   gex::algorithm::simplify(_ring,_simpleRing,_limit);
@@ -222,7 +150,7 @@ void offsetRing(const RING& _ring,
 
     using namespace gex::algorithm::functor;
 
-    generateJunction(_p0,_p1,_p2,_offset,_limit,_junction,_svg);
+    detail::generateJunction(_p0,_p1,_p2,_offset,_limit,_junction);
 //    GEX_ASSERT(!_junction.empty());
     if (!_junction.empty())
     {
@@ -275,8 +203,8 @@ int main(int argc, char* argv[])
 
   auto&& _circle = create::circle(gex::Point2(0,0),10);
   auto _bounds = _circle.bounds();
-  //_circle = create::irregular(gex::Point2(),5,false,16);
-  _circle = create::star(gex::Point2(),3,7,false,40);
+  //_circle = create::irregular(gex::Point2(0.0,0.0),10,false,16);
+  _circle = create::star(gex::Point2(0.0,0.0),3,7,false,40);
 
   //_circle.pop_back();
   boost::geometry::correct(_circle);
@@ -305,26 +233,27 @@ int main(int argc, char* argv[])
     _offsetCircle.clear();
     _svg.clear(512,512);
     _svg.buffer().fit(_bounds);
-    auto _limit = _circle.bounds().size().length() / 10000;
+    auto _limit = _circle.bounds().size().norm() / 10000;
+    
+    for (int i = 0; i < _circle.size()-2; i++)
+    {
+      gex::algorithm::functor::detail::generateJunction(_circle[i+0],_circle[i+1],_circle[i+2],_offset,_limit,_out);
+
+      _svg.draw(_circle,"stroke:red;fill:none");
+
+      if (!_out.empty())
+        _svg.draw(_out,"stroke:blue;fill:none");
+
+      std::stringstream ss;
+      ss << "offset_" << _offset << "_" << i << ".svg";
+      _svg.buffer().write(ss.str());
+    }
+    
     /*
-        for (int i = 0; i < _circle.size()-2; i++)
-        {
-          generateJunction(_circle[i+0],_circle[i+1],_circle[i+2],_offset,_limit,_out,_svg);
-
-          _svg.draw(_circle,"stroke:red;fill:none");
-
-          if (!_out.empty())
-            _svg.draw(_out,"stroke:blue;fill:none");
-
-          std::stringstream ss;
-          ss << "offset_" << _offset << "_" << i << ".svg";
-          _svg.buffer().write(ss.str());
-        }
-    */
     _svg.clear();
     _svg.draw(_circle,"stroke:red;fill:none");
 
-    rawOffsetRing(_circle,_offset,_limit,_out,_svg);
+  //  rawOffsetRing(_circle,_offset,_limit,_out,_svg);
     _svg.draw(_out,"stroke:blue;stroke-width:0.5;fill:none");
 
     //gex::Ring _bounds = create::circle(gex::Point2(0,0),10 + _offset);
@@ -336,7 +265,7 @@ int main(int argc, char* argv[])
     //  _offsetCircle.clear();
   //    gex::algorithm::offset(_circle,_offsetCircle,_offset);
     offsetRing(_circle,_offset,_offsetCircle,_svg);
-    _svg.draw(_offsetCircle,"stroke:yellow;stroke-width:3;fill:none");
+    _svg.draw(_offsetCircle,"stroke:yellow;stroke-width:3;fill:none");*/
     std::stringstream ss;
     ss << "offset_" << std::setw(5) << std::setfill('0') << _index << ".svg";
     _svg.buffer().write(ss.str());

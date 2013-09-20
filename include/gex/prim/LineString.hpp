@@ -24,14 +24,23 @@ namespace gex
     }
 
     template<class POINT>
-    struct LineString : std::vector<POINT>
+    struct LineString : base::VecContainer<POINT>
     {
-      /// Orientation of ring (CW = clockwise, CCW = counter-clockwise)
-      enum Orientation { CW, CCW };
+      LineString() {}
+
+      template<typename BEGIN, typename END>
+      LineString(BEGIN _begin, END _end) 
+      {
+        this->reserve(_end - _begin);
+        std::for_each(_begin,_end,[&](const point_type& _point)
+        {
+          this->push_back(_point);
+        });
+      }
 
       typedef POINT point_type;
-      typedef typename point_type::scalar_type scalar_type;
-      typedef typename point_type::model_type model_type;
+      typedef base::Model<POINT::SizeAtCompileTime,typename POINT::Scalar> model_type;
+      typedef typename model_type::scalar_type scalar_type;
       typedef base::Range<scalar_type> range_type;
       typedef base::Bounds<model_type> bounds_type;
       typedef std::vector<point_type> ctnr_type;

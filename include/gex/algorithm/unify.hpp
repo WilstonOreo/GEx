@@ -26,7 +26,7 @@ namespace gex
         ++j;
         for (; j != _input.end(); ++j)
         {
-          if (!(i->bounds() && j->bounds())) continue;
+          if (!intersects(i->bounds(),j->bounds())) continue;
 
           PRIMITIVES _newPrimitives;
           UNION()(*i,*j,_newPrimitives);

@@ -26,19 +26,6 @@ namespace gex
       };
 
       template<typename MODEL>
-      struct Intersection<base::Point<MODEL>>
-      {
-        template<typename NODE_GEOMETRY>
-        IntersectResult operator()(
-          const base::Point<MODEL>& _p,
-          const NODE_GEOMETRY& _n)
-        {
-          return IntersectResult(_p[_n.axis()] <= _n.splitPos(),
-                                 _p[_n.axis()] >= _n.splitPos());
-        }
-      };
-
-      template<typename MODEL>
       struct Intersection<prim::Vertex<MODEL>>
       {
         template<typename NODE_GEOMETRY>

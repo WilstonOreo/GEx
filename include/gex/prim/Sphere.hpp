@@ -1,7 +1,5 @@
 #pragma once
 
-#include "gex/base/Vec.hpp"
-#include "gex/base/Point.hpp"
 #include "gex/base/Bounds.hpp"
 
 namespace gex

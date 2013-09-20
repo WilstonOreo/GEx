@@ -22,6 +22,7 @@ FIND_PACKAGE(Qt4 REQUIRED)
 set(Boost_INCLUDE_DIR ../../boost_1_54_0)
 set(Boost_LIBRARY_DIR ../../boost_1_54_0/stage/lib)
 
+INCLUDE_DIRECTORIES(. ${CMAKE_CURRENT_BINARY_DIR} ./include ../TbdLib/include  )
 
 find_package(Boost 1.54 COMPONENTS program_options system filesystem REQUIRED)
 
@@ -33,6 +34,7 @@ IF (Boost_FOUND)
   ADD_DEFINITIONS( "-DHAS_BOOST" )
 ENDIF()
 
+INCLUDE_DIRECTORIES(/usr/include/eigen3)
 ADD_DEFINITIONS("-DDEBUG")
 
 message("${Boost_LIBRARIES}")
@@ -58,7 +60,6 @@ ENDFUNCTION()
 
 sample_build()
 
-INCLUDE_DIRECTORIES(. ${CMAKE_CURRENT_BINARY_DIR} ./include ../TbdLib/include  )
 ADD_DEFINITIONS(-g -O3 -fsigned-char -Wall -fPIC -std=c++11)
 ADD_DEFINITIONS(-ferror-limit=1 -fcolor-diagnostics -fdiagnostics-show-template-tree)
 

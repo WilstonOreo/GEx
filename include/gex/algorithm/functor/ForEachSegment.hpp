@@ -46,6 +46,19 @@ namespace gex
           for_each_segment_range<POINT>(_lineString.begin(),_lineString.end(),f);
         }
       };
+      
+      template<typename POINT, bool IS_CONST>
+      struct ForEach<prim::Segment<POINT>,prim::MultiLineString<POINT>,IS_CONST>
+      {
+        GEX_ALGORITHM_FOREACH_TYPEDEFS(prim::Segment<POINT>,prim::MultiLineString<POINT>)
+
+        template<typename FUNCTOR>
+        void operator()(prim_ref_type _multiLineString, FUNCTOR f)
+        {
+          for (auto& _lineString : _multiLineString)
+            for_each_segment_range<POINT>(_lineString.begin(),_lineString.end(),f);
+        }
+      };
     }
   }
 }

@@ -37,8 +37,8 @@ namespace gex
         /// Default constructor
         Bounds()
         {
-          min_.vectorize(maxmax());
-          max_.vectorize(minmin());
+          min_.fill(maxmax());
+          max_.fill(minmin());
         }
         /** @brief Initialize bounds by two opposite corner points
          * @param _min minimum coordinate
@@ -154,13 +154,13 @@ namespace gex
         /// Return projected bounds
         proj_bounds_type project(Axis _z) const
         {
-          return proj_bounds_type(min().project(_z),max().project(_z));
+          return proj_bounds_type(base::project(min(),_z),base::project(max(),_z));
         }
 
         exp_bounds_type expand(Axis _z, const range_type& _range) const
         {
-          return exp_bounds_type(min().expand(_z,_range.min()),
-                                 max().expand(_z,_range.max()));
+          return exp_bounds_type(base::expand(min(),_z,_range.min()),
+                                 base::expand(max(),_z,_range.max()));
         }
 
         /** @brief Return radius of this bounds
@@ -168,14 +168,14 @@ namespace gex
          */
         scalar_type radius() const
         {
-          return size().length()/2;
+          return size().norm()/2;
         }
         /** @brief Return center of this bounds
          * @return center as point
           */
         const point_type center() const
         {
-          return 0.5*(max_.vec() + min_.vec());
+          return 0.5*(max_ + min_);
         }
 
         /** @brief Split bounds in two halves
@@ -231,12 +231,6 @@ namespace gex
             if (min_[i] > max_[i] )
               return false;
           return true;
-        }
-        friend Bounds operator*(const Bounds& _bounds, const Matrix<Model<dimensions()+1,scalar_type>> _matrix)
-        {
-          point_type _min = _bounds.min()*_matrix,
-                     _max = _bounds.max()*_matrix;
-          return Bounds(_min,_max);
         }
 
         friend std::istream& operator>>(std::istream& _is, Bounds& _b)

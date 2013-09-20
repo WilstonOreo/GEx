@@ -1,7 +1,5 @@
 #pragma once
 
-#include "gex/base/Vec.hpp"
-#include "gex/base/Point.hpp"
 #include "gex/base/Bounds.hpp"
 
 namespace gex
@@ -27,7 +25,7 @@ namespace gex
 
       vec_type normal() const
       {
-        vec_type _normal;
+        vec_type _normal(0,0,0);
         _normal[AXIS] = 1.0;
         return _normal;
       }
