@@ -10,10 +10,10 @@ namespace gex
     namespace util
     {
       template<typename POINT>
-      Vec2 getNormal(const POINT& _p0, const POINT& _p1)
+      POINT getNormal(const POINT& _p0, const POINT& _p1)
       {
-        auto&& _d = _p1 - _p0;
-        return Vec2(-_d.y(),_d.x());
+        POINT _d = _p1 - _p0;
+        return POINT(-_d.y(),_d.x());
       }
 
 
@@ -32,7 +32,7 @@ namespace gex
       }
 
       template<typename POINT>
-      typename POINT::scalar_type determinant(
+      typename POINT::Scalar determinant(
         const POINT& _a,
         const POINT& _b,
         const POINT& _c)

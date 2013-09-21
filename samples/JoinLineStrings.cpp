@@ -84,6 +84,8 @@ for (auto& _dirFile : _dirFiles)
 }
 
 
+#include <gex/algorithm/perimeter.hpp>
+
 int main(int argc, char* argv[])
 {
   if (argc < 2) return EXIT_FAILURE;
@@ -117,14 +119,14 @@ int main(int argc, char* argv[])
     _svg.buffer().fit(Bounds2(_center - _m,_center + _m));
     
     std::stringstream _ss;
-    _ss << std::setw(5) << std::setfill('0') << _number; 
+    _ss << "join_test/" << std::setw(5) << std::setfill('0') << _number; 
 
     gex::MultiRing _rings;
 
     _lineStrings.clear();
 
     _svg.draw(_segments,"stroke:red;fill:none");
-    _svg.buffer().write(_ss.str()+"_segments.svg");
+//    _svg.buffer().write(_ss.str()+"_segments.svg");
     _svg.clear();
 
     using namespace gex;
@@ -134,10 +136,25 @@ int main(int argc, char* argv[])
     
     algorithm::Join<gex::MultiSegment,gex::MultiRing,strategy_type> _join;
     _join(_segments,_rings,strategy_type(_lineStrings,0.0000000001,0.1),junction_type());
-    
-    _svg.draw(_rings,"stroke:green;fill:none");
-    _svg.draw(_lineStrings,"stroke:orange;fill:none");
-    _svg.buffer().write(_ss.str()+"_rings.svg");
+
+    // calculate length as constraint
+    Scalar _ringLength = 0.0;
+    Scalar _segmentsLength = 0.0;
+    for (auto& _segment : _segments) 
+      _segmentsLength += gex::perimeter(_segment);
+
+    for (auto& _ring : _rings)
+    {
+      _ringLength += gex::perimeter(_ring);
+    }
+
+    if (_ringLength*1.1 < _segmentsLength) 
+    {
+      _svg.draw(convert<gex::MultiLineString>(_segments),"stroke:gray;fill:none");
+      _svg.draw(_rings,"stroke:green;fill:none");
+      _svg.draw(_lineStrings,"stroke:orange;fill:none");
+      _svg.buffer().write(_ss.str()+"_rings.svg");
+    }
 //    _svg.buffer().write("JoinLineStrings_02_linestring.svg");*/
     _number++;
   }

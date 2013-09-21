@@ -77,10 +77,12 @@ namespace gex
         {
           if (correct_) return;
           bounds_type _bounds;
+          area_ = 0;
           for ( auto& _polygon : *this )
           {
             _polygon.update();
             _bounds.extend(_polygon.bounds());
+            area_ += _polygon.area();
           }
           boost::geometry::correct(*this);
           bounds_=_bounds;
@@ -89,6 +91,7 @@ namespace gex
 
         TBD_PROPERTY_RO(bool,correct)
         TBD_PROPERTY_REF_RO(bounds_type,bounds)
+        TBD_PROPERTY_REF_RO(scalar_type,area)
       };
     }
   }

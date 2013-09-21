@@ -26,7 +26,7 @@ namespace gex
         {
           typedef POINT point_type;
           typedef typename point_type::Scalar scalar_type;
-          typedef POINT vec_type;
+          typedef POINT vec_type; 
 
           auto _arcFrac = std::abs(_a1 - _a0) * util::invPi2();
           int _steps = (int)(_arcFrac * M_PI / std::acos(1.0 - _limit / std::abs(_radius)));
@@ -158,9 +158,9 @@ namespace gex
             if (_skip) return;
             _offsetPolygons.clear();
             gex::algorithm::functor::detail::generateJunction(
-              _curve.points()[0],
-              _curve.points()[1],
-              _curve.points()[2],
+              _curve.p0(),
+              _curve.p1(),
+              _curve.p2(),
               _offset,_limit,_junction);
             
             boost::geometry::correct(_junction);
@@ -175,17 +175,28 @@ namespace gex
             _polygon.update();
           });
 
-          if (_skip) 
+          if (_skip || _polygon.boundary().empty()) 
             return false;
 
           typedef gex::prim::LineString<point_type> linestring_type;
+          linestring_type _lineString(_ring.begin(),_ring.end());
+          
           if (intersects(
-              linestring_type(_ring.begin(),_ring.end()),
+              _lineString,
               linestring_type(_polygon.boundary().begin(),_polygon.boundary().end())))
           {
             return false;
           }
-          return !_polygon.boundary().empty();
+          for (auto& _hole : _polygon.holes())
+          {
+            if (intersects(
+                  _lineString,
+                  linestring_type(_hole.begin(),_hole.end())))
+            {
+              return false;
+            }    
+          }
+          return true;
         }
       }
 

@@ -63,7 +63,12 @@ namespace gex
         {
           if (correct_) return;
           boundary_.update();
-          for( auto& _ring : holes_ ) _ring.update();
+          area_ = boundary_.area();
+          for( auto& _ring : holes_ ) 
+          {
+            _ring.update();
+            area_ -= _ring.area();
+          }
 
           boost::geometry::correct(*this);
           bounds_= boundary_.bounds();
@@ -99,6 +104,7 @@ namespace gex
         TBD_PROPERTY_RO(bool,correct)
         TBD_PROPERTY_REF_RO(ring_type,boundary)
         TBD_PROPERTY_REF_RO(bounds_type,bounds)
+        TBD_PROPERTY_REF_RO(scalar_type,area)
         TBD_PROPERTY_REF_RO(holes_type,holes)
       };
     }

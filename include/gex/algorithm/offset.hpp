@@ -127,12 +127,13 @@ namespace gex
 
         template<typename OFFSET>
         void operator()(const ring_type& _in, const OFFSET& _offset, result_type& _output, 
-                        Scalar _eps = 0.0001)
+                        Scalar _eps = 0.001)
         {
           typedef typename ring_type::bounds_type bounds_type;
           
           ring_type _simplified;
           auto& _bounds = _in.bounds();
+          std::cout << _bounds << std::endl;
           auto _limit = _bounds.size().norm() * _eps;
           boost::geometry::simplify(_in,_simplified,_limit);
           _simplified.update();
@@ -159,9 +160,14 @@ namespace gex
         void operator()(
           const prim::Polygon<RING>& _in, const OFFSET& _offset, 
           result_type& _out, 
-          Scalar _eps = 0.0001)
+          Scalar _eps = 0.001)
         {
           typedef Offset<RING> offset_type;
+          if (_in.holes().empty())
+          {
+            offset_type()(_in.boundary(),_offset,_out,_eps);
+            return;
+          }
           
           auto& _bounds = _in.bounds();
           Scalar _limit = _bounds.size().norm() * _eps;
