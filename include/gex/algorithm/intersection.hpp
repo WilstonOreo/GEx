@@ -1,7 +1,8 @@
 #pragma once
 
 #include <boost/geometry/algorithms/intersection.hpp>
-#include "gex/prim.hpp"
+#include <gex/prim.hpp>
+#include <gex/polygon.hpp>
 
 namespace gex
 {
@@ -27,6 +28,16 @@ namespace gex
       GEX_INTERSECTION_TYPE(OrthogonalPlane<X>,Triangle,Segment)
       GEX_INTERSECTION_TYPE(OrthogonalPlane<Y>,Triangle,Segment)
       GEX_INTERSECTION_TYPE(OrthogonalPlane<Z>,Triangle,Segment)
+
+    GEX_INTERSECTION_TYPE(polygon::Ring,polygon::Ring,polygon::MultiPolygon)
+    GEX_INTERSECTION_TYPE(polygon::Ring,polygon::Polygon,polygon::MultiPolygon)
+    GEX_INTERSECTION_TYPE(polygon::Ring,polygon::MultiPolygon,polygon::MultiPolygon)
+    GEX_INTERSECTION_TYPE(polygon::Polygon,polygon::Ring,polygon::MultiPolygon)
+    GEX_INTERSECTION_TYPE(polygon::Polygon,polygon::Polygon,polygon::MultiPolygon)
+    GEX_INTERSECTION_TYPE(polygon::Polygon,polygon::MultiPolygon,polygon::MultiPolygon)
+    GEX_INTERSECTION_TYPE(polygon::MultiPolygon,polygon::Ring,polygon::MultiPolygon)
+    GEX_INTERSECTION_TYPE(polygon::MultiPolygon,polygon::Polygon,polygon::MultiPolygon)
+    GEX_INTERSECTION_TYPE(polygon::MultiPolygon,polygon::MultiPolygon,polygon::MultiPolygon)
 
 /*
         bool intersect(const ray_type& _ray, scalar_type* _clampTMin = nullptr, scalar_type* _clampTMax = nullptr) const
@@ -70,13 +81,56 @@ namespace gex
           }
         }
       };
+
+      /// Boost Polygon operations
+      template<>
+      struct Intersection<polygon::Polygon,polygon::Polygon>
+      {
+        template<typename A, typename B, typename I>
+        inline void operator()(const A& _a, const B& _b, I& _i)
+        {
+          using namespace boost::polygon::operators;
+          _i = _a ^ _b;
+        }
+      };
       
-      template<typename MODEL>
-      struct Intersection<prim::Segment<MODEL>,prim::Segment<MODEL>>
+    template<>
+    struct Intersection<polygon::Ring,polygon::Ring> :
+        Intersection<polygon::Polygon,polygon::Polygon> {};
+    
+    template<>
+    struct Intersection<polygon::Ring,polygon::Polygon> :
+        Intersection<polygon::Polygon,polygon::Polygon> {};
+    
+    template<>
+    struct Intersection<polygon::Ring,polygon::MultiPolygon> :
+        Intersection<polygon::Polygon,polygon::Polygon> {};
+
+    template<>
+    struct Intersection<polygon::Polygon,polygon::Ring> :
+        Intersection<polygon::Polygon,polygon::Polygon> {};
+
+    template<>
+    struct Intersection<polygon::Polygon,polygon::MultiPolygon> :
+        Intersection<polygon::Polygon,polygon::Polygon> {};
+    
+    template<>
+    struct Intersection<polygon::MultiPolygon,polygon::Ring> :
+        Intersection<polygon::Polygon,polygon::Polygon> {};
+
+    template<>
+    struct Intersection<polygon::MultiPolygon,polygon::Polygon> :
+        Intersection<polygon::Polygon,polygon::Polygon> {};
+
+    template<>
+    struct Intersection<polygon::MultiPolygon,polygon::MultiPolygon> :
+        Intersection<polygon::Polygon,polygon::Polygon> {};      
+      template<typename POINT>
+      struct Intersection<prim::Segment<POINT>,prim::Segment<POINT>>
       {
       private:
-       typedef base::Point<MODEL> point_type;
-        typedef prim::Segment<MODEL> segment_type;
+       typedef POINT point_type;
+        typedef prim::Segment<POINT> segment_type;
 
         template<typename PRECISION = double>
         bool operator()(

@@ -133,7 +133,6 @@ namespace gex
           
           ring_type _simplified;
           auto& _bounds = _in.bounds();
-          std::cout << _bounds << std::endl;
           auto _limit = _bounds.size().norm() * _eps;
           boost::geometry::simplify(_in,_simplified,_limit);
           _simplified.update();
@@ -246,6 +245,7 @@ namespace gex
           _out.insert(_out.end(),_offsetPolygons.begin(),_offsetPolygons.end());
         }
       };
+    
     }
 
     using functor::Offset;

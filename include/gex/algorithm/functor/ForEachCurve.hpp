@@ -10,8 +10,8 @@ namespace gex
     namespace functor
     {
       /// For each curve in linestring
-      template<typename POINT>
-      struct ForEach<base::Curve<POINT>,prim::LineString<POINT>,true>
+      template<typename POINT, bool IS_CONST>
+      struct ForEach<base::Curve<POINT>,prim::LineString<POINT>,IS_CONST>
       {
         typedef base::Curve<POINT> curve_type;
         typedef prim::LineString<POINT> primitive_type;
@@ -32,8 +32,8 @@ namespace gex
       };
 
       /// For each curve in ring
-      template<typename POINT>
-      struct ForEach<base::Curve<POINT>,prim::Ring<POINT>,true>
+      template<typename POINT, bool IS_CONST>
+      struct ForEach<base::Curve<POINT>,prim::Ring<POINT>,IS_CONST>
       {
         typedef base::Curve<POINT> curve_type;
         typedef prim::Ring<POINT> primitive_type;
@@ -58,8 +58,8 @@ namespace gex
       };
 
       /// ForEach point in curve
-      template<typename POINT>
-      struct ForEach<POINT,base::Curve<POINT>,true>
+      template<typename POINT, bool IS_CONST>
+      struct ForEach<POINT,base::Curve<POINT>,IS_CONST>
       {
         typedef base::Curve<POINT> curve_type;
 

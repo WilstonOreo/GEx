@@ -34,7 +34,7 @@ namespace gex
             for (auto& _marker : _markers)
             {
               if (_marker < 0 || _marker >= 1) continue;
-              auto&& _p = _segment.p0() + _v * _marker;
+              POINT _p = _segment.p0() + _marker * _v;
               sf(_p);
             }
           }
@@ -132,5 +132,7 @@ namespace gex
       Step<PRIMITIVE>()(_prim,_markers,sf,[&](const typename PRIMITIVE::point_type& _p){});
     }
   }
+
+  using algorithm::step;
 }
 

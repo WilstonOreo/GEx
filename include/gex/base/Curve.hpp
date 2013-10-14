@@ -21,12 +21,16 @@ namespace gex
       {
         return algorithm::util::determinant(p0_,p1_,p2_);
       }
-
+/*
       scalar_type angle() const
       {
-        auto&& _v0 = (p2_ - p1_).normalized();
-        auto&& _n = algorithm::util::getNormal(p1_,p0_).normalized();
-        return dot(_n,_v0);
+        scalar_type _cos = (p2_ - p1_).normalized().dot((p0_ - p1_).normalized());
+        return rad2deg(fabs(M_PI - acos(_cos)));
+      }
+  */    
+      scalar_type angle() const
+      {
+        return (p2_ - p1_).normalized().dot((p0_ - p1_).normalized());
       }
 
       point_type const& p0() const { return p0_; }

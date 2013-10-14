@@ -11,6 +11,8 @@
 #include <boost/geometry/algorithms/area.hpp>
 #include <boost/geometry/algorithms/correct.hpp>
 #include <boost/geometry/algorithms/within.hpp>
+#include <boost/geometry/algorithms/equals.hpp>
+#include <boost/geometry/algorithms/sym_difference.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/algorithms/convert.hpp>
 #include <boost/geometry/algorithms/num_points.hpp>
@@ -22,6 +24,7 @@ namespace gex
   {
     using boost::geometry::difference;
     using boost::geometry::correct;
+    using boost::geometry::equals;
     using boost::geometry::convex_hull;
     using boost::geometry::simplify;
     using boost::geometry::area;

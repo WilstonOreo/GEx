@@ -30,6 +30,20 @@ namespace gex
     template<typename SCALAR>
     using Transform3 = Eigen::Transform<SCALAR,3,Eigen::Affine>;
 
+
+    /// Get rotation matrix from 3-dimensional direction vector (it is assumed that it is normalized)
+    template<Axis AXIS, typename VEC, typename MATRIX>
+    void matrixFromVector(const VEC& _vec, MATRIX& _m)
+    {
+      VEC _up = VEC::Zero();
+      _up(1) = 1.0;
+      VEC _right = _vec.cross(_up).normalized();
+      _up = _right.cross(_vec).normalized();
+      _m.col(0) = _right;
+      _m.col(1) = _up;
+      _m.col(2) = _vec;
+    }
+
     template<
       typename CENTER, 
       typename OFFSET, 
@@ -56,7 +70,7 @@ namespace gex
         Eigen::AngleAxis<scalar_type>(deg2rad(_xDeg),vec_type::UnitX()) *
         Eigen::Translation<scalar_type,3>(-_c);
     }
-    
+
     template<
       typename X_ROT, 
       typename Y_ROT, 

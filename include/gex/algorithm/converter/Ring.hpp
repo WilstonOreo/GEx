@@ -107,7 +107,7 @@ namespace gex
           for (auto& _boundary : _boundaries)
           {
             auto _holeIt = _holes.begin();
-            // Store holes temporary in another vector as
+            // Store holes temporary in another vector since
             // they need to be unified afterwards
             rings_type _holesTmp;
             while (_holeIt != _holes.end())

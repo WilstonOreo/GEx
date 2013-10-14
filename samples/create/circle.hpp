@@ -26,5 +26,4 @@ namespace create
     _ring.update();
     return _ring;
   }
-
 }

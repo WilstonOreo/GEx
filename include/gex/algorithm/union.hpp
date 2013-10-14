@@ -1,7 +1,8 @@
 #pragma once
 
-#include "boost/geometry/algorithms/union.hpp"
-#include "gex/prim.hpp"
+#include <boost/geometry/algorithms/union.hpp>
+#include <gex/prim.hpp>
+#include <gex/polygon.hpp>
 
 namespace gex
 {
@@ -13,18 +14,29 @@ namespace gex
       typedef A type;
     };
 
-#define GEX_GEOMETRY_UNION_TYPE(a,b,i) \
+#define GEX_UNION_TYPE(a,b,i) \
       template<> struct UnionType<a,b> { typedef i type; };
 
-    GEX_GEOMETRY_UNION_TYPE(Ring,Ring,std::vector<Ring>)
-    GEX_GEOMETRY_UNION_TYPE(Ring,Polygon,MultiPolygon)
-    GEX_GEOMETRY_UNION_TYPE(Ring,MultiPolygon,MultiPolygon)
-    GEX_GEOMETRY_UNION_TYPE(Polygon,MultiPolygon,MultiPolygon)
-    GEX_GEOMETRY_UNION_TYPE(Polygon,Polygon,MultiPolygon)
-    GEX_GEOMETRY_UNION_TYPE(Polygon,Ring,MultiPolygon)
-    GEX_GEOMETRY_UNION_TYPE(MultiPolygon,Ring,MultiPolygon)
-    GEX_GEOMETRY_UNION_TYPE(MultiPolygon,Polygon,MultiPolygon)
-    GEX_GEOMETRY_UNION_TYPE(MultiPolygon,MultiPolygon,MultiPolygon)
+    GEX_UNION_TYPE(Ring,Ring,std::vector<Ring>)
+    GEX_UNION_TYPE(Ring,Polygon,MultiPolygon)
+    GEX_UNION_TYPE(Ring,MultiPolygon,MultiPolygon)
+    GEX_UNION_TYPE(Polygon,MultiPolygon,MultiPolygon)
+    GEX_UNION_TYPE(Polygon,Polygon,MultiPolygon)
+    GEX_UNION_TYPE(Polygon,Ring,MultiPolygon)
+    GEX_UNION_TYPE(MultiPolygon,Ring,MultiPolygon)
+    GEX_UNION_TYPE(MultiPolygon,Polygon,MultiPolygon)
+    GEX_UNION_TYPE(MultiPolygon,MultiPolygon,MultiPolygon)
+
+    GEX_UNION_TYPE(polygon::Ring,polygon::Ring,polygon::MultiPolygon)
+    GEX_UNION_TYPE(polygon::Ring,polygon::Polygon,polygon::MultiPolygon)
+    GEX_UNION_TYPE(polygon::Ring,polygon::MultiPolygon,polygon::MultiPolygon)
+    GEX_UNION_TYPE(polygon::Polygon,polygon::Ring,polygon::MultiPolygon)
+    GEX_UNION_TYPE(polygon::Polygon,polygon::Polygon,polygon::MultiPolygon)
+    GEX_UNION_TYPE(polygon::Polygon,polygon::MultiPolygon,polygon::MultiPolygon)
+    GEX_UNION_TYPE(polygon::MultiPolygon,polygon::Ring,polygon::MultiPolygon)
+    GEX_UNION_TYPE(polygon::MultiPolygon,polygon::Polygon,polygon::MultiPolygon)
+    GEX_UNION_TYPE(polygon::MultiPolygon,polygon::MultiPolygon,polygon::MultiPolygon)
+
 
     template<typename A, typename B>
     struct Union
@@ -43,6 +55,51 @@ namespace gex
         }
       }
     };
+
+    /// Boost Polygon operations
+    template<>
+    struct Union<polygon::Polygon,polygon::Polygon>
+    {
+      template<typename A, typename B, typename I>
+      inline void operator()(const A& _a, const B& _b, I& _i)
+      {
+        using namespace boost::polygon::operators;
+        _i = _a + _b;
+      }
+    };
+
+    template<>
+    struct Union<polygon::Ring,polygon::Ring> :
+        Union<polygon::Polygon,polygon::Polygon> {};
+    
+    template<>
+    struct Union<polygon::Ring,polygon::Polygon> :
+        Union<polygon::Polygon,polygon::Polygon> {};
+    
+    template<>
+    struct Union<polygon::Ring,polygon::MultiPolygon> :
+        Union<polygon::Polygon,polygon::Polygon> {};
+
+    template<>
+    struct Union<polygon::Polygon,polygon::Ring> :
+        Union<polygon::Polygon,polygon::Polygon> {};
+
+    template<>
+    struct Union<polygon::Polygon,polygon::MultiPolygon> :
+        Union<polygon::Polygon,polygon::Polygon> {};
+    
+    template<>
+    struct Union<polygon::MultiPolygon,polygon::Ring> :
+        Union<polygon::Polygon,polygon::Polygon> {};
+
+    template<>
+    struct Union<polygon::MultiPolygon,polygon::Polygon> :
+        Union<polygon::Polygon,polygon::Polygon> {};
+
+    template<>
+    struct Union<polygon::MultiPolygon,polygon::MultiPolygon> :
+        Union<polygon::Polygon,polygon::Polygon> {};
+
 
     template<typename SCALAR>
     struct Union<base::Range<SCALAR>,base::Range<SCALAR>>

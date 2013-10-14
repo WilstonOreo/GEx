@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/polygon/polygon.hpp>
+#include <boost/polygon/polygon_set_concept.hpp>
 #include <gex/prim.hpp>
 
 

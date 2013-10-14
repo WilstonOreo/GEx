@@ -10,8 +10,7 @@ namespace gex
     struct Vertex 
     {
       typedef MODEL model_type;
-      using typename model_type::scalar_type;
-      using typename model_type::dimensions;
+      typedef typename model_type::scalar_type scalar_type;
       typedef base::Bounds<model_type> bounds_type;
       typedef base::Vec<model_type> vec_type;
       typedef base::Point<model_type> point_type;
