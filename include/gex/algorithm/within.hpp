@@ -123,4 +123,6 @@ namespace gex
       };
     }
   }
+
+  using algorithm::within;
 }
