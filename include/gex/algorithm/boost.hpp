@@ -6,7 +6,6 @@
 #include <boost/type_traits/remove_reference.hpp>
 
 #include <boost/geometry/algorithms/simplify.hpp>
-#include <boost/geometry/algorithms/difference.hpp>
 #include <boost/geometry/algorithms/disjoint.hpp>
 #include <boost/geometry/algorithms/area.hpp>
 #include <boost/geometry/algorithms/correct.hpp>
@@ -22,7 +21,6 @@ namespace gex
 {
   namespace algorithm
   {
-    using boost::geometry::difference;
     using boost::geometry::correct;
     using boost::geometry::equals;
     using boost::geometry::convex_hull;
