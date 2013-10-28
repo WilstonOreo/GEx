@@ -236,12 +236,15 @@ namespace gex
           result_type _offsetPolygons;
           for (auto& _p : _in)
           {
-            Offset<POLYGON>()(_p,_offset,_offsetPolygons);
+            result_type _tmp;
+            Offset<POLYGON>()(_p,_offset,_tmp);
+            _offsetPolygons.insert(_offsetPolygons.end(),_tmp.begin(),_tmp.end()); 
           }
           if (_offset > 0.0)
           {
             _offsetPolygons = unify(_offsetPolygons);
-          }
+          } 
+
           _out.insert(_out.end(),_offsetPolygons.begin(),_offsetPolygons.end());
         }
       };
