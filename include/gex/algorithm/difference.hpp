@@ -111,7 +111,7 @@ namespace gex
     typename DifferenceType<A,B>::type difference(const A& _a, const B& _b)
     {
       typename DifferenceType<A,B>::type _i;
-      difference<A,B>()(_a,_b,_i);
+      difference(_a,_b,_i);
       return _i;
     }
 
@@ -121,5 +121,7 @@ namespace gex
       return difference(_a,_b);
     }
   }
+
+  using algorithm::difference;
 }
 
