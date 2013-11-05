@@ -105,12 +105,12 @@ int main(int argc, char* argv[])
     _points.push_back(_p);
   pointsTest(_svg,_points);
 
-  ringTest(_svg,_circle);
-  polygonTest(_svg,_circleWithHoles);
+//  ringTest(_svg,_circle);
+//  polygonTest(_svg,_circleWithHoles);
 
   /// Test skeleton
   ringSkeletonTest(_svg,_circle);
-  polygonSkeletonTest(_svg,_circleWithHoles);
+ // polygonSkeletonTest(_svg,_circleWithHoles);
 
   return EXIT_SUCCESS;
 }

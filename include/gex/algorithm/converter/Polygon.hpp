@@ -124,6 +124,23 @@ namespace gex
           }
         }
       };
+      
+      /// Converts a polygon to a multilinestring
+      template<typename POLYGON, typename POINT>
+      struct Converter<prim::MultiPolygon<POLYGON>,prim::MultiRing<POINT>>
+      {
+        typedef prim::MultiPolygon<POLYGON> multipolygon_type;
+        typedef prim::MultiRing<POINT> multiring_type;
+
+        void operator()(const multipolygon_type& _in, multiring_type& _out)
+        {
+          typedef prim::Ring<POINT> ring_type;
+          for_each<ring_type>(_in,[&](const ring_type& _ring)
+          {
+            _out.push_back(_ring); 
+          });
+        }
+      };
     }
   }
 }

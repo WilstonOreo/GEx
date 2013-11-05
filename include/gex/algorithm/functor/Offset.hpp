@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gex/algorithm/unify.hpp"
+#include "gex/algorithm/difference.hpp"
 #include "gex/algorithm/intersection.hpp"
 #include "gex/algorithm/for_each.hpp"
 #include <gex/algorithm/within.hpp>

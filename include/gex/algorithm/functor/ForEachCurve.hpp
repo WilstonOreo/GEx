@@ -56,6 +56,38 @@ namespace gex
           f(curve_type(_ring[_n-2],_ring[0],_ring[1]));
         }
       };
+      
+      /// For each curve in ring
+      template<typename POINT, typename RING, bool IS_CONST>
+      struct ForEach<base::Curve<POINT>,prim::Polygon<RING>,IS_CONST>
+      {
+        typedef base::Curve<POINT> curve_type;
+        typedef prim::Polygon<RING> primitive_type;
+
+        template<typename FUNCTOR>
+        void operator()(const primitive_type& _polygon, FUNCTOR f)
+        {
+          ForEach<RING,prim::Polygon<RING>,true>()(_polygon,[&](const RING& _ring)
+          {
+            ForEach<curve_type,RING,IS_CONST>()(_ring,f);
+          });
+        }
+      };
+      
+      /// For each curve in ring
+      template<typename POINT, typename POLYGON, bool IS_CONST>
+      struct ForEach<base::Curve<POINT>,prim::MultiPolygon<POLYGON>,IS_CONST>
+      {
+        typedef base::Curve<POINT> curve_type;
+        typedef prim::MultiPolygon<POLYGON> primitive_type;
+
+        template<typename FUNCTOR>
+        void operator()(const primitive_type& _p, FUNCTOR f)
+        {
+          for (auto& _polygon : _p)
+            ForEach<curve_type,POLYGON,IS_CONST>()(_polygon,f);
+        }
+      };
 
       /// ForEach point in curve
       template<typename POINT, bool IS_CONST>

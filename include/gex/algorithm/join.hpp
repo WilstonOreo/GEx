@@ -89,6 +89,7 @@ namespace gex
               if (_excluded.find(_candidate.second) != _excluded.end()) continue;
 
               auto _frontDist = algorithm::sqrDistance(_candidate.second->front(),_lineString.back());
+              
               if (_frontDist <= _minDist) 
               {
                 _finalCandidate = _candidate.second;

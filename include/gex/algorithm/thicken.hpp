@@ -1,7 +1,8 @@
 #pragma once
 
+#include <gex/polygon.hpp>
 #include "offset.hpp"
-#include "skeleton.hpp"
+#include "medial_axis.hpp"
 
 namespace gex
 {
@@ -17,48 +18,51 @@ namespace gex
       {
         typedef prim::Ring<POINT> ring_type;
         typedef prim::Polygon<ring_type> polygon_type;
-        typedef prim::MultiPolygon<polygon_type> result_type;
+        typedef polygon_type output_type;
 
-        template<typename IN, typename OFFSET, typename OUT>
-        void operator()(const IN& _in, const OFFSET& _offset, OUT& _out)
+        template<typename IN, typename MIN_DETAIL, typename OFFSET, typename OUT>
+        void operator()(const IN& _in, const MIN_DETAIL& _minDetail, const OFFSET& _offset, OUT& _out)
         {
           if (_offset < 0.0) return;
-          auto&& _skeleton = skeleton(_in);
-          auto&& _offsetSkeleton = offset(_skeleton,_offset);
-          for (auto& _polygon : _offsetSkeleton) 
+          auto&& _medial_axis = medial_axis(_in,gex::strategy::medial_axis::ScaleAxis(_minDetail));
+          auto&& _offsetMedialAxis = offset(_medial_axis,_offset);
+          
+          polygon::MultiPolygon _multiPolygon;
+          auto&& _bounds = _in.bounds();
+          using namespace boost::polygon::operators;
+          for (auto& _polygon : _offsetMedialAxis)
+          {
             _polygon.update();
-          _offsetSkeleton = unify(_offsetSkeleton);
-          union_(_offsetSkeleton,_in,_out);
+            _multiPolygon += polygon::adapt(_polygon,_bounds);
+          }
+          _multiPolygon += polygon::adapt(_in,_bounds);
+          auto&& _outPolygons = polygon::adapt(_multiPolygon,_bounds);
+          if (_outPolygons.size() != 1) return;
+          _out = _outPolygons[0];
+          _out.update();
         }
       };
 
       template<typename RING>
       struct Thicken<prim::Polygon<RING>> : Thicken<RING> 
       {
-        typedef prim::Polygon<RING> polygon_type;
-        typedef prim::MultiPolygon<polygon_type> result_type;
-      };
-      
-      template<typename POLYGON>
-      struct Thicken<prim::MultiPolygon<POLYGON>> : Thicken<POLYGON> 
-      {
-        typedef prim::MultiPolygon<POLYGON> result_type;
-      };
+        typedef prim::Polygon<RING> output_type;
+      };   
     }
 
     using functor::Thicken;
 
-    template<typename IN, typename OFFSET, typename OUT>
-    void thicken(const IN& _in, const OFFSET& _offset, OUT& _out)
+    template<typename IN, typename MIN_DETAIL, typename OFFSET, typename OUT>
+    void thicken(const IN& _in, const MIN_DETAIL& _minDetail, const OFFSET& _offset, OUT& _out)
     {
-      Thicken<IN>()(_in,_offset,_out);
+      Thicken<IN>()(_in,_minDetail,_offset,_out);
     }
     
-    template<typename IN, typename OFFSET>
-    typename Thicken<IN>::result_type thicken(const IN& _in, const OFFSET& _offset)
+    template<typename IN, typename MIN_DETAIL, typename OFFSET>
+    typename Thicken<IN>::output_type thicken(const IN& _in, const MIN_DETAIL& _minDetail, const OFFSET& _offset)
     {
-      typename Thicken<IN>::result_type _out;
-      thicken(_in,_offset,_out);
+      typename Thicken<IN>::output_type _out;
+      thicken(_in,_minDetail,_offset,_out);
       return _out;
     }
   }

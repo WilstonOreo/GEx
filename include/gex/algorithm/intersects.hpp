@@ -49,6 +49,7 @@ namespace gex
         }
       };
 
+
       template<typename SCALAR>
       struct Intersects<
         SCALAR, base::Range<SCALAR>>

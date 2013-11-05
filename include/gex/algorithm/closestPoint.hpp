@@ -2,6 +2,7 @@
 
 #include "for_each.hpp"
 #include "distance.hpp"
+#include "convert.hpp"
 
 namespace gex
 {
@@ -25,7 +26,7 @@ namespace gex
           auto& _p0 = _segment.p0();
           auto& _p1 = _segment.p1();
           auto&& _d = _p1 - _p0;
-          auto _t = dot(_d,_point - _p0) / _d.sqrLength(); 
+          auto _t = _d.dot(_point - _p0) / _d.squaredNorm(); 
           if (_t <= 0) { _closestPoint = _p0; return; }
           if (_t >= 1) { _closestPoint = _p1; return; }
           _closestPoint = _p0 + _t * _d;
@@ -37,12 +38,11 @@ namespace gex
         template<typename SUBPRIMITIVE,typename PRIMITIVE, typename POINT>
         void closest(const PRIMITIVE& _prim, const POINT& _point, POINT& _closestPoint)
         {
-          typedef typename PRIMITIVE::model_type model_type;
-          typedef typename model_type::scalar_type scalar_type;
-          typedef prim::Segment<model_type> segment_type;
+          typedef typename POINT::Scalar scalar_type;
+          typedef prim::Segment<POINT> segment_type;
           
           auto _minDist = inf<scalar_type>();
-          for_each<SUBPRIMITIVE>(_prim,[&](const SUBPRIMITIVE& _segment)
+          functor::ForEach<SUBPRIMITIVE,PRIMITIVE,true>()(_prim,[&](const SUBPRIMITIVE& _segment)
           {
             POINT _subPoint;
             ClosestPoint<SUBPRIMITIVE>()(_segment,_point,_subPoint);
@@ -112,7 +112,22 @@ namespace gex
             const POINT& _point,
             POINT& _closestPoint)
         {
-          closest<POLYGON>(_prim,_point,_closestPoint);
+          typedef typename POLYGON::ring_type ring_type;
+          bool _found = true;
+          typedef typename POINT::Scalar scalar_type;
+          auto _minDist = inf<scalar_type>();
+          for (auto& _polygon : _prim)
+          {
+            POINT _p;
+            closest<ring_type>(_prim,_point,_p);
+            auto _dist = gex::sqrDistance(_p,_closestPoint);
+            if (_found || _dist < _minDist)
+            {
+              _minDist = _dist;
+              _found = false;
+              _closestPoint = _p;
+            }
+          }
         }
       };
     }

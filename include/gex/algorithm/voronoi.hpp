@@ -100,7 +100,7 @@ namespace gex
             auto _v1 = _edge.vertex1();
             if (!_v0 || !_v1)
             {
-              std::cout << "Infinite edge" << std::endl;
+              //std::cout << "Infinite edge" << std::endl;
               continue;
             }
             using namespace gex::polygon;

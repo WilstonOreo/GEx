@@ -11,6 +11,7 @@ namespace gex
     using boost::geometry::index::intersects;
     using boost::geometry::index::covered_by;
     using boost::geometry::index::within;
+    using boost::geometry::index::satisfies;
     using boost::geometry::index::rtree;
     using boost::geometry::index::linear;
     using boost::geometry::index::rstar;

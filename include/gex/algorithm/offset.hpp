@@ -246,6 +246,10 @@ namespace gex
           } 
 
           _out.insert(_out.end(),_offsetPolygons.begin(),_offsetPolygons.end());
+          for (auto& _p : _out)
+          {
+            _p.update();
+          }
         }
       };
     

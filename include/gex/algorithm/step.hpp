@@ -34,8 +34,7 @@ namespace gex
             for (auto& _marker : _markers)
             {
               if (_marker < 0 || _marker >= 1) continue;
-              POINT _p = _segment.p0() + _marker * _v;
-              sf(_p);
+              sf(_segment.p0() + POINT(_marker * _v));
             }
           }
         }
@@ -82,8 +81,6 @@ namespace gex
         }
       }
 
-
-
       template<typename POINT, bool IS_CONST>
       struct Step<prim::LineString<POINT>,IS_CONST>
       {
@@ -96,8 +93,10 @@ namespace gex
           SEGMENT_FUNCTOR sf,
           POINT_FUNCTOR pf)
         {
+          pf(_ls.front());
           step_range<POINT>(_ls.begin(),_ls.end(),perimeter(_ls),_markers,sf,pf);
           sf(_ls.back());
+          pf(_ls.back());
         }
       };
 

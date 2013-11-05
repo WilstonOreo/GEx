@@ -98,7 +98,6 @@ namespace gex
             _out.push_back(_a.back());
             return;
           }
-          std::cout << _out.size() << std::endl;
           _j(_out,_a,_out);
           _out.push_back(_a.back());
         }
