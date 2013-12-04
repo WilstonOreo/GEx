@@ -29,7 +29,7 @@ namespace gex
           typedef gex::prim::Ring<point_type> ring_type;
           typedef gex::prim::LineString<point_type> linestring_type;
           std::vector<prim::MultiPolygon<gex::prim::Polygon<ring_type>>> _offsets;
-          multiOffset(primitive_,algorithm::strategy::DistanceNumber(-distance(),number(),0.5 *-distance()),_offsets);
+          multi_offset(primitive_,algorithm::strategy::DistanceNumber(-distance(),number(),0.5 *-distance()),_offsets);
 
           for (auto& _offset : _offsets)
             for_each<ring_type>(_offset,[&](const ring_type& _ring)

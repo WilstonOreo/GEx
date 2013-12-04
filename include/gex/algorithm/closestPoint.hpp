@@ -33,6 +33,21 @@ namespace gex
         }
       };
 
+      template<typename POINT>
+      struct ClosestPoint<base::Curve<POINT>>
+      {
+        void operator()(const base::Curve<POINT>& _curve, const POINT& _point, POINT& _closestPoint)
+        {
+          typedef prim::Segment<POINT> segment_type;
+          POINT _p0, _p1;
+          ClosestPoint<segment_type>()(segment_type(_curve.p0(),_curve.p1()),_point,_p0);
+          ClosestPoint<segment_type>()(segment_type(_curve.p1(),_curve.p2()),_point,_p1);
+          auto&& _dist0 = sqrDistance(_p0,_point);
+          auto&& _dist1 = sqrDistance(_p1,_point);
+          _closestPoint = (_dist0 < _dist1) ? _p0 : _p1;
+        }
+      };
+
       namespace 
       {
         template<typename SUBPRIMITIVE,typename PRIMITIVE, typename POINT>

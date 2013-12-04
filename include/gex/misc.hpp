@@ -9,6 +9,26 @@
 
 #include "misc/assert.hpp"
 
+#define GEX_FUNCTOR(functor_name,function_name)\
+    namespace functor\
+    {\
+      template<typename IN, typename STRATEGY>\
+      struct functor_name {};\
+    }\
+    using functor::functor_name;\
+    template<typename IN, typename STRATEGY, typename OUT>\
+    void function_name(const IN& _in, STRATEGY _s, OUT& _out)\
+    {\
+      functor_name<IN,STRATEGY>()(_in,_s,_out);\
+    }\
+    template<typename IN, typename STRATEGY>\
+    typename functor_name<IN,STRATEGY>::output_type function_name(const IN& _in, STRATEGY _s)\
+    {\
+      typename functor_name<IN,STRATEGY>::output_type _out;\
+      function_name(_in,_s,_out);\
+      return _out;\
+    }
+
 
 namespace gex
 {
@@ -40,6 +60,12 @@ namespace gex
     {
       return T(rand())/T(RAND_MAX);
     }
+
+
+    template <typename T> int sgn(T val) 
+    {
+      return (T(0) < val) - (val < T(0));
+    }  
   }
 
   using misc::deg2rad;

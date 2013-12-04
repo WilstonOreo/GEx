@@ -2,71 +2,47 @@
 #include "create.hpp"
 #include <gex/algorithm/offset.hpp>
 #include <gex/algorithm/within.hpp>
-#include <gex/io.hpp>
+#include <gex/algorithm/extremePoints.hpp>
 
-template<typename POINT>
-typename POINT::scalar_type determinant(
-  const POINT& _a,
-  const POINT& _b,
-  const POINT& _c)
+template<typename POLYGON>
+void fitSVG(const POLYGON& _polygon, gex::io::SVG& _svg)
 {
-  return (_b.x() * _c.y() + _a.x() * _b.y() + _a.y()*_c.x()) -
-         (_a.y() * _b.x() + _b.y() * _c.x() + _a.x()*_c.y());
+  using namespace gex;
+  auto& _bounds = _polygon.bounds();
+  auto&& _center = _bounds.center();
+  auto&& _max = (_bounds.size()(X) + _bounds.size()(Y)) / 2.0;
+  Vec2 _m(_max,_max);
+  _svg.buffer().fit(Bounds2(_center - _m,_center + _m));
 }
-
-template<typename POINT>
-typename POINT::scalar_type curvature(
-  const POINT& _a,
-  const POINT& _b,
-  const POINT& _c)
-{
-}
-
-template<typename PRIMITIVE, typename FUNCTOR>
-void for_each_curve(const PRIMITIVE& _primitive, FUNCTOR f)
-{
-}
-
 
 
 
 int main(int argc, char* argv[])
 {
-  gex::io::SVG _svg;
-  using gex::Point2;
-
-  auto&& _circle = create::circle(gex::Point2(0,0),10);
-  auto _bounds = _circle.bounds();
-  _svg.buffer().fit(_bounds);
-//  _circle = create::irregular(gex::Point2(),5,false,16);
-  _circle = create::star(gex::Point2(),4,7,false,40);
-
-
-  //_circle.pop_back();
-  boost::geometry::correct(_circle);
-
-  _svg.draw(_circle,"stroke:green");
-
-  std::multimap<gex::Scalar,Point2 const*> _candidates;
-
-  for_each_curve(_circle,[&](const Point2& _p0, const Point2& _p1, const Point2& _p2)
+  using namespace gex;
+  std::string _wkt(argv[1]);
+  
+  MultiPolygon _polygons;
+  io::readWkt(_wkt,_polygons);
+  
+  size_t _number = 0;
+  for (auto& _polygon : _polygons)
   {
-    auto&& _curvature = determinant(_p0,_p1,_p2);  
- //     ((_p2 - _p1).length() * (_p1 - _p0).length());
-    
-    if (_curvature > 0)
-      _candidates.insert(std::make_pair(_curvature,&_p1));
-  });
+    io::SVG _svg;
+    _svg.buffer().backgroundColor() = gex::io::svg::Color("black");
+    _polygon.update(); 
+    fitSVG(_polygon,_svg);
 
-  for (auto& _candidate : _candidates)
-  {
-    _svg.draw(*_candidate.second,"stroke:yellow");
-    _svg.buffer().text(*_candidate.second,_candidate.first,"font-size:15;fill:red");
+    _svg.draw(_polygon,"stroke:white;fill:none");
+
+    std::stringstream _ss;
+    _ss << "curvature/Curvature" << std::setw(3) << std::setfill('0') << _number << ".svg";
+
+    std::vector<Point2> _points;
+    algorithm::extremePoints(_polygon.boundary(),_points,_svg);
+    _svg.buffer().write(_ss.str());
+    ++_number;
   }
-
-
-
-  _svg.buffer().write("Curvature.svg");
 
   return EXIT_SUCCESS;
 }

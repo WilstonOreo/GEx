@@ -61,6 +61,16 @@ namespace gex
           ss << 255 * float(color_type::a()) / color_type::max() << ")";
           return ss.str();
         }
+        
+        std::string rgbStr() const
+        {
+          std::stringstream ss;
+          ss << "rgb(";
+          ss << 255 * color_type::r() << ",";
+          ss << 255 * color_type::g() << ",";
+          ss << 255 * color_type::b() << ")";
+          return ss.str();
+        }
 
         void operator()(const std::string& _name)
         {

@@ -11,6 +11,47 @@ namespace gex
 {
   namespace color
   {
+    namespace pixel
+    {
+      namespace
+      {
+#define GEX_COLOR_PIXEL_FUNC(func_name,type,return_val)\
+        template<> struct func_name<type> { inline type operator()() { return return_val; } };
+
+        template<typename T> struct Max {};
+        GEX_COLOR_PIXEL_FUNC(Max,float,1.0f)
+        GEX_COLOR_PIXEL_FUNC(Max,double,1.0)
+        GEX_COLOR_PIXEL_FUNC(Max,uint8_t,255)
+        GEX_COLOR_PIXEL_FUNC(Max,uint16_t,65535)
+        GEX_COLOR_PIXEL_FUNC(Max,uint32_t,0xFFFFFFFF)
+        
+        template<typename T> struct Min {};
+        GEX_COLOR_PIXEL_FUNC(Min,float,0.0f)
+        GEX_COLOR_PIXEL_FUNC(Min,double,0.0)
+        GEX_COLOR_PIXEL_FUNC(Min,uint8_t,0)
+        GEX_COLOR_PIXEL_FUNC(Min,uint16_t,0)
+        GEX_COLOR_PIXEL_FUNC(Min,uint32_t,0)
+      }
+      
+      template<typename T>
+      T min()
+      {
+        return Min<T>()();
+      }
+      
+      template<typename T>
+      T max()
+      {
+        return Max<T>()();
+      }
+
+      template<typename T>
+      T def()
+      {
+        return min<T>();
+      }
+    }
+
     typedef float DEFAULT_COLOR_TYPE;
 
     template<typename T, typename MIN, typename MAX>
@@ -42,7 +83,7 @@ namespace gex
         BOOST_STATIC_ASSERT(dimensions() >= 3 && dimensions() <= 4);
         this->operator()(_r,_g,_b);
         if( dimensions() > 3 )
-          a_[3] = max();
+          a_[3] = max(); 
       }
       
       Color(component_type _r, component_type _g, component_type _b, component_type _a )
@@ -58,12 +99,7 @@ namespace gex
         if (dimensions() == 4)
           a_[3] = _color.dimensions() == 4 ? _color.a() : max();
       }
-
-      static const component_type max()
-      {
-        return max(component_type());
-      }
-      
+ 
       GEX_SCALAR_REF(r,0)
       GEX_SCALAR_REF(g,1)
       GEX_SCALAR_REF(b,2)
@@ -196,7 +232,7 @@ namespace gex
         /// @todo improve this
         for (size_t i = 0; i < _lhs.channels(); i++)
         {
-          float _diff = (_lhs.a_[i] - _rhs.a_[i]) / _lhs.max();
+          float _diff = (_lhs.a_[i] - _rhs.a_[i]) / max();
           _sum += _diff * _diff;
         }
 
@@ -204,29 +240,11 @@ namespace gex
 
       }
 
-
-      static float max(float)
+      static component_type max()
       {
-        return 1.0f;
-      }
-      static double max(double)
-      {
-        return 1.0;
-      }
-      static uint8_t max(uint8_t)
-      {
-        return 255;
+        return pixel::max<component_type>();
       }
 
-      static uint16_t max(uint16_t)
-      {
-        return 65535;
-      }
-
-      static uint32_t max(uint32_t)
-      {
-        return 0xFFFFFFFF;
-      }
 
       const component_type a(boost::mpl::int_<4>) const
       {

@@ -27,8 +27,8 @@ namespace gex
             "x2=\"" << _p1.x() << "\" " << 
             "y2=\"" << _p1.y() << "\"";
           _buffer += Shape("line",_parameter.str(),_style);
-//          Draw<POINT>()(_segment[0],"stroke:yellow",_buffer,5);
-//          Draw<POINT>()(_segment[1],"stroke:white",_buffer,7);
+   //       Draw<POINT>()(_segment[0],"stroke:black",_buffer,5);
+  //        Draw<POINT>()(_segment[1],"stroke:black",_buffer,7);
         }
       };
 

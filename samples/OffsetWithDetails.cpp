@@ -3,127 +3,317 @@
 #include <gex/io/read.hpp>
 #include <gex/io/svg/RandomColor.hpp>
 
-#include <gex/algorithm/perimeter.hpp>
-#include <gex/algorithm/intersection.hpp>
 //#include <gex/algorithm/offset_details.hpp>
-#include <gex/algorithm/functor/Offset.hpp>
 #include <gex/algorithm/medial_axis.hpp>
-#include <gex/algorithm/closestPoint.hpp>
 
 #include <gex/polygon.hpp>
 
-namespace gex
-{
-  namespace algorithm
-  {
-    template<typename POLYGON, typename JUNCTIONS, typename OFFSET>
-    void generateJunctions(
-        const POLYGON& _polygon, 
-        JUNCTIONS& _junctions,
-        OFFSET _offset)
-    {
-      typedef typename POLYGON::point_type point_type;
-      typedef typename POLYGON::ring_type ring_type;
-      typedef base::Curve<point_type> curve_type;
-      for_each<curve_type>(_polygon,[&](const curve_type& _curve)
-      {
-        ring_type _junction;
-            gex::algorithm::functor::detail::generateJunction(
-              _curve.p0(),
-              _curve.p1(),
-              _curve.p2(),
-              std::abs(_offset),std::abs(_offset * 10e-5),_junction);
-        _junctions.push_back(_junction);
-      });
-    }
-
-    template<typename POLYGON, typename OFFSET> 
-    gex::MultiPolygon junctionPolygon(
-        const POLYGON& _polygon, 
-        OFFSET _offset)
-    {
-      typedef typename POLYGON::ring_type ring_type;
-      gex::MultiRing _minJunctions;
-      gex::MultiRing _offsetJunctions;
-      generateJunctions(_polygon,_offsetJunctions,std::abs(_offset));
-
-      auto& _pbounds = _polygon.bounds();
-      auto&& _center = _pbounds.center();
-      auto&& _max = (_pbounds.size()(X) + _pbounds.size()(Y)) / 2.0;
-      Vec2 _m(_max,_max);
-      Bounds2 _bounds(_center - _m,_center + _m);
-      
-      using namespace boost::polygon::operators;
-      gex::polygon::MultiPolygon _intersections;
-
-      for (auto& _junction : _offsetJunctions)
-      {
-        _intersections += gex::polygon::adapt(_junction,_bounds);
-      }
-
-      return gex::polygon::adapt(_intersections,_bounds);
-    }
-  }
-}
-
 #include "create/circle.hpp"
+#include <gex/algorithm/nonUniformOffset.hpp>
+
 
 template<typename SEGMENTS, typename POLYGON, typename SVG>
 void paintCirclesFromAxis(const SEGMENTS& _segments, const POLYGON& _polygon, SVG& _svg)
 {
+  using namespace gex;
 
-  for (auto& _segment : _segments)
+for (auto& _segment : _segments)
   {
-    auto&& _p = gex::closestPoint(_polygon,_segment.front());
+    auto&& _p0 = closestPoint(_polygon,_segment.p0());
+    auto&& _p1 = closestPoint(_polygon,_segment.p1());
+    Scalar _d0 = distance(_p0,_segment.p0());
+    Scalar _d1 = distance(_p1,_segment.p1());
+
+    auto&& _ring = nonUniformOffset(_segment,std::make_pair(_d0,_d1));
+    _svg.draw(_ring,"stroke:yellow;fill:none");
+  }
+}
+
+template<typename POLYGON>
+void fitSVG(const POLYGON& _polygon, gex::io::SVG& _svg)
+{
+  using namespace gex;
+  auto& _bounds = _polygon.bounds();
+  auto&& _center = _bounds.center();
+  auto&& _max = (_bounds.size()(X) + _bounds.size()(Y)) / 2.0;
+  Vec2 _m(_max,_max);
+  _svg.buffer().fit(Bounds2(_center - _m,_center + _m));
+}
+
+  template<typename POLYGON, typename SVG>
+void drawPolygon(const POLYGON& _polygon, SVG& _svg)
+{
+  _svg.buffer().resize(512,512);
+  fitSVG(_polygon,_svg);
+  _svg.buffer().backgroundColor() = gex::io::svg::Color("white");
+  _svg.draw(_polygon,"stroke:black;fill:none");
+}
+
+template<typename POLYGON, typename SVG>
+void drawPolygonSimplifiedMedialAxis(const POLYGON& _polygon, float _factor, SVG& _svg)
+{
+  drawPolygon(_polygon,_svg);
+  auto&& _medial_axis = gex::medial_axis(_polygon,gex::strategy::medial_axis::SegmentsOnly());
+  _svg.draw(_medial_axis,"stroke:dimgray;fill:none");
+
+  gex::Polygon _simplified;
+  gex::algorithm::simplify(_polygon,_simplified,_factor*0.5);
+  _simplified.update();
+  _svg.draw(_simplified,"stroke:orange;fill:none");
+}
+
+template<typename BRANCHES, typename SVG>
+void drawBranches(const BRANCHES& _branches, const std::string& _color, SVG& _svg)
+{
+  for (auto& _branch : _branches)
+  {
+    auto&& _segments = _branch->getSegments();
+
+    for (auto _segment : _segments)
+    {
+      _svg.draw(*_segment,"stroke:"+_color+";fill:none");
+    }
+  }
+}
+
+template<typename POLYGON>
+void svgMedialAxis(const POLYGON& _polygon, float _factor, const std::string& _prefix)
+{
+  using namespace gex;
+  io::SVG _svg;
+  drawPolygonSimplifiedMedialAxis(_polygon,_factor,_svg);
+  _svg.buffer().write(_prefix+"simplified.svg");
+}
+
+template<typename POLYGON>
+void svgPrimaryBranches(const POLYGON& _polygon, float _factor, const std::string& _prefix)
+{
+  using namespace gex;
+  typedef algorithm::functor::Branch<gex::Segment> branch_type;
+  typedef base::Curve<Point2> curve_type;
+  typedef std::unique_ptr<curve_type> curve_ptr_type;
+
+  io::SVG _svg;
+  drawPolygonSimplifiedMedialAxis(_polygon,_factor,_svg);
+  auto&& _medial_axis = gex::medial_axis(_polygon,gex::strategy::medial_axis::SegmentsOnly());
+  auto&& _branches = gex::algorithm::functor::get_branches(_medial_axis);
+  /*
+    for (auto& _branch : _branches)
+    {
+      _svg.draw(_branch.startPoint(),"stroke:lime;fill:none");
+    }
+    */
+
+  std::vector<branch_type const*> _primary, _secondary;
+  std::vector<curve_ptr_type> _curves;
+  gex::Polygon _simplified;
+  gex::algorithm::simplify(_polygon,_simplified,_factor*0.5);
+  _simplified.update();
+  gex::algorithm::functor::get_curves(_simplified,_curves);
+  gex::algorithm::functor::get_primary_and_secondary_branches(_branches,_curves,_primary,_secondary);
+
+  drawBranches(_secondary,"red",_svg);
+  drawBranches(_primary,"blue",_svg);
+  _svg.buffer().write(_prefix+"branches.svg");
+}
+
+template<typename POLYGON>
+void svgSecondaryPruned(const POLYGON& _polygon, float _factor, const std::string& _prefix)
+{
+  using namespace gex;
+  typedef algorithm::functor::Branch<gex::Segment> branch_type;
+  typedef base::Curve<Point2> curve_type;
+  typedef std::unique_ptr<curve_type> curve_ptr_type;
+  auto&& _medial_axis = gex::medial_axis(_polygon,gex::strategy::medial_axis::SegmentsOnly());
+
+  gex::Polygon _simplified;
+  gex::algorithm::simplify(_polygon,_simplified,_factor*0.5);
+  _simplified.update();
+  gex::MultiSegment _pruned;
+
+  int _iteration = 0;
+  while (_medial_axis.size() != _pruned.size())
+  {
+    io::SVG _svg;
+    drawPolygon(_polygon,_svg);
+    std::vector<curve_ptr_type> _curves;
+    gex::algorithm::functor::get_curves(_simplified,_curves);
+    auto&& _branches = gex::algorithm::functor::get_branches(_medial_axis);
+
+    std::vector<branch_type const*> _primary, _secondary;
+    gex::algorithm::functor::get_primary_and_secondary_branches(_branches,_curves,_primary,_secondary);
+
+    _pruned = gex::algorithm::functor::pruned(_medial_axis,_secondary);
+    _svg.draw(_pruned,"stroke:red;fill:none");
+    std::swap(_pruned,_medial_axis);
+    std::stringstream _ss;
+    _ss << _prefix << "pruned" << std::setw(3) << std::setfill('0') << _iteration << ".svg";
+    _svg.buffer().write(_ss.str());
+    _iteration++;
+  }
+}
+
+template<typename POLYGON>
+void svgPrimaryPruned(const POLYGON& _polygon, float _factor, const std::string& _prefix)
+{
+  using namespace gex;
+  typedef algorithm::functor::Branch<gex::Segment> branch_type;
+  typedef base::Curve<Point2> curve_type;
+  typedef std::unique_ptr<curve_type> curve_ptr_type;
+  auto&& _medial_axis = gex::medial_axis(_polygon,gex::strategy::medial_axis::SegmentsOnly());
+
+  gex::Polygon _simplified;
+  gex::algorithm::simplify(_polygon,_simplified,_factor*0.5);
+  _simplified.update();
+  io::SVG _svg;
+  drawPolygonSimplifiedMedialAxis(_polygon,_factor,_svg);
+  gex::MultiSegment _pruned = gex::algorithm::functor::prune_secondary(_simplified,_medial_axis);
+  _svg.draw(_pruned,"stroke:blue;fill:none");
+
+  auto&& _branches = gex::algorithm::functor::get_branches(_pruned);
+  std::vector<branch_type const*> _branchPointers;
+  for (auto& _branch : _branches) 
+    _branchPointers.push_back(&_branch);
+
+  gex::MultiLineString _ls, _left;
+  auto&& _withoutBranches = gex::algorithm::functor::pruned(_pruned,_branchPointers);
+
+  for (auto& _branch : _branches)
+  {
+    if (!_branch.freeEnd())
+      _ls.push_back(_branch.asLineString());
+    else
+      gex::for_each<gex::Segment>(_branch.asLineString(),[&](const gex::Segment& _segment)
+      {
+        _withoutBranches.push_back(_segment);
+      });
+  }
+
+  auto&& _offset = gex::offset(_polygon,-_factor);
+  boost::geometry::correct(_offset);
+  boost::geometry::correct(_ls);
+  boost::geometry::intersection(_offset,_ls,_left);
+
+  gex::for_each<gex::Segment>(_left,[&](const gex::Segment& _segment)
+  {
+    _withoutBranches.push_back(_segment);
+  });
+  _svg.draw(_withoutBranches,"stroke:red;fill:none");
+
+
+  _svg.buffer().write(_prefix+"primary_pruned.svg");
+}
+
+template<typename POLYGON>
+void svgFinal(const POLYGON& _polygon, float _factor, const std::string& _prefix)
+{
+  using namespace gex;
+  io::SVG _svg;
+  drawPolygon(_polygon,_svg);
+
+  auto&& _medial_axis = medial_axis(_polygon,strategy::medial_axis::Pruning(_factor));
+  _svg.draw(_medial_axis,"stroke:red;fill:none");
+
+  _svg.buffer().write(_prefix+"final.svg");
+}
+
+template<typename POLYGON>
+void svgPerimeter(const POLYGON& _polygon, float _factor, float _width, int _number, const std::string& _prefix)
+{
+  using namespace gex;
+
+  io::SVG _svg;
+  drawPolygon(_polygon,_svg);
+  //_svg.draw(_medial_axis,"stroke:red;fill:none");
+  gex::MultiPolygon _offsetPolygons, _lastPolygons;
+  for (int i = 0; i < _number; i++)
+  {
+    float _offset = -_width*(i+0.5);
+    offset(_polygon,_offset,_offsetPolygons);
+    _lastPolygons = offset(_polygon,-_width*(i-1.0));
+    auto&& _polygons = offset(_polygon,-_width*(i));
+    for (auto& _p : _offsetPolygons)
+      _p.update();
+    for (auto& _p : _polygons)
+      _p.update();
+    _svg.draw(_offsetPolygons,"stroke:orange;fill:none");
+
+    for (auto& _p : _lastPolygons)
+      _p.update();
+
+    gex::MultiLineString _remaining;
+    auto&& _medial_axis = convert<MultiLineString>(medial_axis(!i ? _polygons : _lastPolygons,strategy::medial_axis::Pruning(_width)));
+    //_svg.draw(_medial_axis,"stroke:green;fill:none");
+    boost::geometry::correct(_medial_axis);
+    boost::geometry::intersection(_medial_axis,_lastPolygons,_remaining);
+    _medial_axis.clear();
+    boost::geometry::difference(_remaining,_offsetPolygons,_medial_axis);
+    _svg.draw(_medial_axis,"stroke:red;fill:none");
+
+    if (_offsetPolygons.empty()) break;
+  }
+
+  _svg.buffer().write(_prefix+"perimeter.svg");
+}
+
+template<typename POLYGON>
+void svgThickening(const POLYGON& _polygon, float _factor, float _width, int _number, const std::string& _prefix)
+{
+  using namespace gex;
+
+  io::SVG _svg;
+  drawPolygon(_polygon,_svg);
+  float _offset = -_width*0.5;
+
+  auto&& _offsetPolygons = offset(_polygon,_offset);
+  for (auto& _p : _offsetPolygons)
+      _p.update();
+  _svg.draw(_offsetPolygons,"stroke:orange;fill:none");
+
+  gex::MultiLineString _remaining;
+  auto&& _medial_axis = convert<MultiLineString>(medial_axis(_polygon,strategy::medial_axis::Pruning(_factor)));
+    //_svg.draw(_medial_axis,"stroke:green;fill:none");
+  boost::geometry::correct(_medial_axis);
+  boost::geometry::difference(_medial_axis,_offsetPolygons,_remaining);
   
-    gex::Scalar _d = gex::distance(_p,_segment.front());
+  auto _bounds = _polygon.bounds();
 
-    _svg.draw(_segment.front(),"stroke:yellow;fill:none");
-    _svg.draw(_p,"stroke:orange;fill:none");
-    auto&& _circle = create::circle(_segment.front(),_d);
-    _svg.draw(_circle,"stroke:red;fill:none");
-  }
-}
+  MultiLineString _connected;
+  join(_remaining,_connected,algorithm::strategy::ThresholdWithReverse(0.001));
 
-
-/*
-template<typename RTREE, typename SEGMENT>
-bool innerSegment(const RTREE& _rtree, const SEGMENT& _segment)
-{
-  _rtree::query(gex::index::nearest(_segment.front()),std::back_inserter(_candidates));
-  if (_candidates.empty()) return false;
-
-  _rtree::query(gex::index::nearest(_segment.back()),std::back_inserter(_candidates));
-  if (_candidates.empty()) return false;
-
-  return true;
-}
-template<typename RTREE, typename SEGMENT, typename FUNCTOR>
-void traversal(const RTREE& _rtree, const SEGMENT& _segment, FUNCTOR f)
-{
-  SEGMENT const* _s = &_segment;
-  while (1) 
+  MultiLineString _cleaned;
+  for (auto& _s : _connected)
   {
-    f(*s);
-    std::vector<> _candidates;
-    _rtree.query(gex::index::intersects(_segment.bounds()))
-    if (_candidates.empty()) return;
-    
-    _s = _candidates.front();
+    if (gex::sqrDistance(_s.front(),_s.back()) < 0.00001) continue;
+    _cleaned.push_back(_s);
   }
-}
+  
+  MultiLineString _connectedAll;
+  join(_medial_axis,_connectedAll,algorithm::strategy::ThresholdWithReverse(0.001));
 
-
-template<typename SEGMENTS, typename POLYGON, typename SVG>
-void segments()
-{
-  gex::RTree2<gex::Segment const*> _rtree;
-  for (auto& _segment : _segments)
+  MultiLineString _cleanedAll;
+  for (auto& _s : _connectedAll)
   {
-    _rtree.insert({_segment.bounds(),&_segment});
+    if (gex::sqrDistance(_s.front(),_s.back()) < 0.00001) continue;
+    _cleanedAll.push_back(_s);
   }
-}*/
 
+  using namespace boost::polygon::operators;
+  auto&& _thickened = polygon::adapt(offset(_offsetPolygons,_width*0.5),_bounds);
+  for (auto& _s : _cleaned)
+  {
+    for_each<Segment>(_s,[&](const Segment& _segment) 
+    {
+      auto&& _offsetPolygon = nonUniformOffset(_segment,std::make_pair(_width,_width));
+      _thickened += polygon::adapt(_offsetPolygon,_bounds);
+    });
+  }
+
+  _svg.draw(polygon::adapt(_thickened,_bounds),"stroke:green;fill:none");
+  
+  _svg.draw(_cleaned,"stroke:red;fill:none");
+  _svg.buffer().write(_prefix+"thickening.svg");
+}
 
 
 
@@ -136,79 +326,28 @@ int main(int argc, char* argv[])
   MultiPolygon _offsetPolygons;
   io::readWkt(_wkt,_polygons);
 
-  float _extrusionWidth = 0.1;
-  std::vector<Scalar> _offsets = { -1.5, -0.5 };
-  
   size_t _number = 0;
-  
+
   for (auto& _polygon : _polygons)
   {
-    io::SVG _svg;
     _polygon.update();
-    auto& _bounds = _polygon.bounds();
-    auto&& _center = _bounds.center();
-    auto&& _max = (_bounds.size()(X) + _bounds.size()(Y)) / 2.0;
-    Vec2 _m(_max,_max);
-    _svg.buffer().fit(Bounds2(_center - _m,_center + _m));
+    if (_polygon.boundary().size() < 10) continue;
+    std::stringstream _ss;
+    _ss << "offset_with_details/" << std::setw(5) << std::setfill('0') << _number << "_";
 
-    for (auto& _offset : _offsets)
-    {
-      _svg.clear();
-      _svg.draw(_polygon,"stroke:red;fill:none");
-      std::stringstream _ss;
-      _ss << "offset_with_details/" << std::setw(5) << std::setfill('0') << _number << "_" << _offset;
-      _offsetPolygons.clear();
-      gex::offset(_polygon,_offset,_offsetPolygons);
-
-      gex::MultiPolygon _perimeter, _outer;
-      for (auto& _p : _offsetPolygons) 
-        _p.update();
-      gex::offset(_offsetPolygons,_extrusionWidth * 0.5,_perimeter);
-      gex::offset(_polygon,_offset + _extrusionWidth,_outer);
-    
-      auto&& _medial_axis = gex::medial_axis(_polygon,gex::strategy::medial_axis::SegmentsOnly());
-      auto&& _scaleAxis = gex::medial_axis(_polygon,gex::strategy::medial_axis::ScaleAxis(std::abs(_offset)));
-
-      for (auto& _segment : _medial_axis)
-      {
-        _svg.draw(_segment,"stroke:gray;fill:none");
-      }
-   
-      for (auto& _segment : _scaleAxis)
-      {
-        _svg.draw(_segment,"stroke:"+gex::io::svg::randomColor()+";fill:none");
-      }
-
+    auto&& _prefix = _ss.str();
+    float _factor = 0.5;
+    std::cout << "Perimeter = " << gex::perimeter(_offsetPolygons) << std::endl;
 /*
-      gex::MultiPolygon _junctionPolygon = gex::algorithm::junctionPolygon(_offsetPolygons,_extrusionWidth*0.5);
-      _svg.draw(_junctionPolygon,"stroke:yellow;fill:none");
-
-      auto&& _segments = gex::offsetDetails(_polygon,_offsetPolygons,_offset,_extrusionWidth);
-      gex::MultiRing _junctions;
-      gex::algorithm::generateJunctions(_polygon,_junctions,std::abs(_offset));
-      _svg.draw(_junctions,"stroke:orange;fill:none");
+    svgMedialAxis(_polygon,_factor,_prefix);
+    svgPrimaryBranches(_polygon,_factor,_prefix);
+    svgSecondaryPruned(_polygon,_factor,_prefix);
+    svgPrimaryPruned(_polygon,_factor,_prefix);
+    svgFinal(_polygon,_factor,_prefix);
 */
-      
-/*
-      paintCirclesFromAxis(_segments,_polygon,_svg);
-      gex::MultiPolygon _intersections;
-      gex::algorithm::junctionIntersections(_polygon,_offset,_extrusionWidth,_intersections);
+    svgPerimeter(_polygon,_factor,_factor,5,_prefix);
+   // svgThickening(_polygon,_factor,_factor,5,_prefix);
 
-      for (auto& _p : _intersections)
-      {
-         _p.update();
-         auto&& _medial_axis = gex::medial_axis(_polygon);
-        _svg.draw(_medial_axis,"stroke:orange;fill:none");
-      }
-
-      _svg.draw(_intersections,"stroke:white;fill:none");
-*/
-      std::cout << "Perimeter = " << gex::perimeter(_offsetPolygons) << std::endl;
-/*
-      _svg.draw(_offsetPolygons,"stroke:green;fill:none");
-      _svg.draw(_perimeter,"stroke:orange;fill:none");*/
-      _svg.buffer().write(_ss.str()+".svg");
-      _number++;
-    }
+    _number++;
   }
 }

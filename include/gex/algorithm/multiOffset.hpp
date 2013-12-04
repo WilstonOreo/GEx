@@ -1,10 +1,14 @@
 #pragma once
+#include <gex/misc.hpp>
 #include "offset.hpp"
+#include "medial_axis.hpp"
 
 namespace gex
 {
   namespace algorithm
   {
+    GEX_FUNCTOR(MultiOffset,multi_offset)
+
     namespace strategy
     {
       struct DistanceNumber
@@ -38,16 +42,36 @@ namespace gex
         TBD_PROPERTY_REF_RO(set_type,distances)
         TBD_PROPERTY_REF_RO(double,simplify)
       };
+
+      template<typename POINT>
+      struct DistanceNumberWithDetails
+      {
+        typedef prim::MultiLineString<POINT> linestring_type;
+
+        DistanceNumberWithDetails(double _distance, size_t _number, linestring_type& _details) :
+          distance_(_distance),
+          number_(_number),
+          details_(_details) {}
+
+        linestring_type& details()
+        {
+          return details_;
+        }
+
+        TBD_PROPERTY_REF_RO(double,distance)
+        TBD_PROPERTY_REF_RO(size_t,number)
+      private:
+        linestring_type& details_;
+      };
     }
 
     namespace functor
     {
-      template<typename PRIMITIVE, typename STRATEGY>
-      struct MultiOffset {};
-      
       template<typename PRIMITIVE>
       struct MultiOffset<PRIMITIVE,strategy::Distances>
       {
+        typedef MultiPolygon output_type;
+
         template<typename STRATEGY, typename OUTPUT>
         void operator()(const PRIMITIVE& _primitive, STRATEGY _strategy, OUTPUT& _output)
         {
@@ -74,6 +98,8 @@ namespace gex
       template<typename PRIMITIVE>
       struct MultiOffset<PRIMITIVE,strategy::DistanceNumber>
       {
+        typedef MultiPolygon output_type;
+        
         template<typename STRATEGY, typename OUTPUT>
         void operator()(const PRIMITIVE& _primitive, STRATEGY _strategy, OUTPUT& _output)
         {
@@ -107,20 +133,43 @@ namespace gex
             MultiOffset<PRIMITIVE,strategy::Distances>()(_primitive,strategy::Distances(_set,_strategy.simplify()),_output);
           }
         }
-
       };
 
-    }
+      template<typename PRIMITIVE, typename POINT>
+      struct MultiOffset<PRIMITIVE,strategy::DistanceNumberWithDetails<POINT>>
+      {
+        typedef MultiPolygon output_type;
+        
+        template<typename STRATEGY, typename OUTPUT>
+        void operator()(const PRIMITIVE& _primitive, STRATEGY _strategy, OUTPUT& _output)
+        {
+          output_type _offsetPolygons, _lastPolygons;
+          for (int i = 0; i < _strategy.number(); i++)
+          {
+            auto& _width = _strategy.distance();
+            float _offset = -_width*(i+0.5);
+            offset(_primitive,_offset,_offsetPolygons);
+            _lastPolygons = offset(_primitive,-_width*(i-1.0));
+            auto&& _polygons = offset(_primitive,-_width*i);
 
-    using functor::MultiOffset;
+            typedef typename STRATEGY::linestring_type linestring_type;
+            linestring_type _remaining;
+            auto&& _medial_axis = convert<linestring_type>(medial_axis(!i ? _polygons : _lastPolygons,gex::strategy::medial_axis::Pruning(_width)));
+            boost::geometry::correct(_medial_axis);
+            boost::geometry::intersection(_medial_axis,_lastPolygons,_remaining);
+            _medial_axis.clear();
+            boost::geometry::difference(_remaining,_offsetPolygons,_medial_axis);
 
-    template<typename IN, typename STRATEGY, typename OUT>
-    void multiOffset(const IN& _in, STRATEGY _strategy, OUT& _out)
-    {
-      MultiOffset<IN,STRATEGY>()(_in,_strategy,_out);
+            for (auto& _lineString : _medial_axis)
+              _strategy.details().push_back(_lineString);
+
+            if (_offsetPolygons.empty()) break;
+          }
+        }
+      };
     }
   }
 
-  using algorithm::multiOffset;
+  using algorithm::multi_offset;
 }
 

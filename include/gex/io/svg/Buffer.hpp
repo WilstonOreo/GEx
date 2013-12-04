@@ -70,11 +70,11 @@ namespace gex
               << "version=\"1.1\" baseProfile=\"full\" "
               << "width=\"" << width_ << "px\" "  
               << "height=\"" << height_ << "px\"> " << std::endl;
-
-          if (backgroundColor_.a() <= 0)
+          if (backgroundColor_.a() > 0)
             _os << background();
 
-          for (const auto& _s : buffer_) _os << _s << std::endl;
+          for (const auto& _s : buffer_) 
+            _os << _s << std::endl;
 
           _os << "</svg>" << std::endl;
         }
@@ -111,7 +111,7 @@ namespace gex
           std::stringstream _params, _style;
           _params << "width=\"" << width_ << "\" ";
           _params << "height=\"" << height_ << "\" ";
-          _style << "fill:" << backgroundColor_ << ";";
+          _style << "fill:" << backgroundColor_.rgbStr() << ";";
           _style << "stroke-width:0;";
 
           return Shape("rect",_params.str(),_style.str());

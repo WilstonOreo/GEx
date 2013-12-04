@@ -61,6 +61,18 @@ namespace gex
             ForEach<POINT,typename prim::MultiLineString<POINT>::value_type,IS_CONST>()(_lineString,f);
         }
       };
+      
+      template<typename POINT, bool IS_CONST>
+      struct ForEach<POINT,prim::MultiSegment<POINT>,IS_CONST>
+      {
+        GEX_ALGORITHM_FOREACH_TYPEDEFS(POINT,prim::MultiSegment<POINT>)
+        template<typename FUNCTOR>
+        void operator()(prim_ref_type _multiSegment, FUNCTOR f)
+        {
+          for (auto& _segment : _multiSegment) 
+            ForEach<POINT,typename prim::MultiSegment<POINT>::value_type,IS_CONST>()(_segment,f);
+        }
+      };
 
       template<typename RING, bool IS_CONST>
       struct ForEach<typename RING::point_type,prim::Polygon<RING>,IS_CONST>

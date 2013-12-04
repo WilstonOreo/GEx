@@ -1,52 +1,29 @@
 #include <gex/prim.hpp>
 #include "create.hpp"
-#include <gex/algorithm/within.hpp>
 #include <gex/io.hpp>
-#include <boost/geometry/extensions/algorithms/buffer/buffer_inserter.hpp>
-
-
+#include <gex/algorithm/nonUniformOffset.hpp>
 
 using namespace gex;
 
 
-namespace gex
-{
-  namespace algorithm
-  {
-    template<typename MODEL, typename OUT>
-    void offset(const prim::Segment<MODEL>& _segment, OUT& _out)
-    {
-      
-
-
-
-
-
-
-    }
-  }
-}
-
-
-
 int main(int argc, char* argv[])
 {
-  gex::io::SVG _svg;
+  using namespace gex;
+
+  io::SVG _svg;
 
   auto&& _circle = create::circle(gex::Point2(0,0),10);
   auto _bounds = _circle.bounds();
   //_circle = create::irregular(gex::Point2(),5,false,16);
-  _circle = create::star(gex::Point2(),3,7,false,40);
-
   _svg.buffer().fit(_bounds);
 
-  
-  offset();
+  Segment _seg(Point2(-2,-4),Point2(4,-4));
+  auto&& _ring = nonUniformOffset(_seg,std::make_pair(3,0.5));
 
+  _svg.draw(_seg,"stroke:red;fill:none");
+  _svg.draw(_ring,"stroke:lime;fill:none");
 
-  //_circle.pop_back();
-  boost::geometry::correct(_circle);
-
+  _svg.buffer().write("NonUniformOffset.svg");
 
   return EXIT_SUCCESS;
 }
