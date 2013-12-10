@@ -1,5 +1,16 @@
 #pragma once
 
+#include <gex/strategy/offset.hpp>
+
+namespace gex
+{
+  namespace algorithm
+  {
+    GEX_FUNCTOR(Offset,offset)
+  }
+  using algorithm::offset; 
+}
+
 #include <gex/algorithm/convert.hpp>
 #include <gex/algorithm/unify.hpp>
 #include <boost/geometry/algorithms/buffer.hpp>
@@ -8,7 +19,10 @@
 #include <boost/geometry/extensions/strategies/buffer.hpp>
 #include <boost/geometry/extensions/strategies/buffer_end_round.hpp>
 #include "functor/Offset.hpp"
+#include <gex/strategy/offset.hpp>
 #include <boost/geometry/extensions/algorithms/remove_spikes.hpp>
+#include "medial_axis.hpp"
+
 
 namespace gex
 {
@@ -17,41 +31,43 @@ namespace gex
     namespace functor
     {
       template<typename POINT>
-      struct Offset<prim::Segment<POINT>>
+      struct Offset<prim::Segment<POINT>,strategy::offset::Default>
       {
         typedef prim::Segment<POINT> segment_type;
         typedef prim::Polygon<prim::Ring<POINT>> polygon_type;
-        typedef prim::MultiPolygon<polygon_type> result_type;
+        typedef prim::MultiPolygon<polygon_type> output_type;
 
-        template<typename OFFSET>
-        void operator()(const segment_type& _segment, const OFFSET& _offset, result_type& _out)
+        template<typename STRATEGY>
+        void operator()(const segment_type& _segment, STRATEGY _s, output_type& _out)
         {
           typedef prim::LineString<POINT> linestring_type;
           auto&& _lineString = convert<linestring_type>(_segment);
-          Offset<linestring_type>()(_lineString,_offset,_out);
+          offset(_lineString,strategy::offset::Default(_s.offset()),_out);
         }
       };
       
       template<typename POINT>
-      struct Offset<prim::LineString<POINT>>
+      struct Offset<prim::LineString<POINT>,strategy::offset::Default>
       {
         typedef prim::Polygon<prim::Ring<POINT>> polygon_type;
-        typedef prim::MultiPolygon<polygon_type> result_type;
+        typedef prim::MultiPolygon<polygon_type> output_type;
         typedef prim::LineString<POINT> linestring_type;
 
-        template<typename OFFSET>
-        void operator()(const linestring_type& _lineString, const OFFSET& _offset, result_type& _out)
+        template<typename STRATEGY>
+        void operator()(const linestring_type& _lineString, STRATEGY _s, output_type& _out)
         {
           if (_lineString.empty()) return;
           if ((sqrDistance(_lineString.back(),_lineString.front()) == 0.0) && 
               _lineString.size() <= 2) return;  
+
+          auto& _offset = _s.offset();
 
           if (_offset < 0.0) return;
           namespace bg = boost::geometry;
           namespace buf = bg::strategy::buffer;
           buf::join_round<POINT,POINT> _joinStrategy(16 + _offset * 10);
           buf::end_round<POINT,POINT> _endStrategy(16 + _offset * 10);
-          buf::distance_symmetric<OFFSET> _distanceStrategy(_offset);
+          buf::distance_symmetric<Scalar> _distanceStrategy(_offset);
           bg::buffer_inserter<polygon_type>(_lineString, std::back_inserter(_out),
                         _distanceStrategy, 
                         _joinStrategy,
@@ -60,40 +76,42 @@ namespace gex
       };
       
       template<typename POINT>
-      struct Offset<prim::MultiLineString<POINT>>
+      struct Offset<prim::MultiLineString<POINT>,strategy::offset::Default>
       {
         typedef prim::Polygon<prim::Ring<POINT>> polygon_type;
-        typedef prim::MultiPolygon<polygon_type> result_type;
+        typedef prim::MultiPolygon<polygon_type> output_type;
         typedef prim::LineString<POINT> linestring_type;
         typedef prim::MultiLineString<POINT> multilinestring_type;
 
-        template<typename OFFSET>
-        void operator()(const multilinestring_type& _multiLineString, const OFFSET& _offset, result_type& _out)
+        template<typename STRATEGY>
+        void operator()(const multilinestring_type& _multiLineString, STRATEGY _s, output_type& _out)
         {
-          result_type _lineStringPolygons;
+          output_type _lineStringPolygons;
+          auto& _offset = _s.offset();
           for (auto& _lineString : _multiLineString)
           {
-            Offset<linestring_type>()(_lineString,_offset,_out);
+            offset(_lineString,_s,_out);
           }
         }
       };
 
       template<typename POINT>
-      struct Offset<prim::Ring<POINT>>
+      struct Offset<prim::Ring<POINT>,strategy::offset::Default>
       {
         typedef prim::Ring<POINT> ring_type;
         typedef POINT point_type;
         typedef prim::Polygon<ring_type> polygon_type;
         typedef prim::MultiPolygon<polygon_type> multipolygon_type;
-        typedef multipolygon_type result_type;
+        typedef multipolygon_type output_type;
         typedef typename POINT::Scalar scalar_type;
 
         /// Returns true if offset variant was successful, false if boost polygon was used
-        template<typename BOUNDS, typename OFFSET, typename SCALAR>
-        bool withoutFallback(const ring_type& _in, const BOUNDS& _bounds, const OFFSET& _offset, result_type& _output, 
+        template<typename BOUNDS, typename STRATEGY, typename SCALAR>
+        bool withoutFallback(const ring_type& _in, const BOUNDS& _bounds, STRATEGY _s, output_type& _output, 
                         SCALAR _limit)
         {
           typedef typename ring_type::scalar_type scalar_type;
+          auto& _offset = _s.offset();
 
           _output.clear();
           if (std::abs(_offset) <= _limit)
@@ -125,10 +143,11 @@ namespace gex
           return false;
         }
 
-        template<typename OFFSET>
-        void operator()(const ring_type& _in, const OFFSET& _offset, result_type& _output, 
+        template<typename STRATEGY>
+        void operator()(const ring_type& _in, STRATEGY _s, output_type& _output, 
                         Scalar _eps = 0.001)
         {
+          auto& _offset = _s.offset();
           typedef typename ring_type::bounds_type bounds_type;
           
           ring_type _simplified;
@@ -137,7 +156,7 @@ namespace gex
           boost::geometry::simplify(_in,_simplified,_limit);
           _simplified.update();
 
-          if (!withoutFallback(_simplified,_in.bounds(),_offset,_output,_limit))
+          if (!withoutFallback(_simplified,_in.bounds(),_s,_output,_limit))
           {
             /// Boost polygon minkowski sum fallback if generating offset polygon was not successful
             auto _maxExtent = std::max(_bounds.size()(X),_bounds.size()(Y));
@@ -151,20 +170,21 @@ namespace gex
       };     
 
       template<typename RING>
-      struct Offset<prim::Polygon<RING>>
+      struct Offset<prim::Polygon<RING>,strategy::offset::Default>
       {
-        typedef prim::MultiPolygon<prim::Polygon<RING>> result_type;
+        typedef prim::MultiPolygon<prim::Polygon<RING>> output_type;
 
-        template<typename OFFSET>
+        template<typename STRATEGY>
         void operator()(
-          const prim::Polygon<RING>& _in, const OFFSET& _offset, 
-          result_type& _out, 
+          const prim::Polygon<RING>& _in, STRATEGY _s, 
+          output_type& _out, 
           Scalar _eps = 0.001)
         {
-          typedef Offset<RING> offset_type;
+          auto& _offset = _s.offset();
+          typedef Offset<RING,STRATEGY> offset_type;
           if (_in.holes().empty())
           {
-            offset_type()(_in.boundary(),_offset,_out,_eps);
+            offset_type()(_in.boundary(),_s,_out,_eps);
             return;
           }
           
@@ -174,8 +194,8 @@ namespace gex
           boost::geometry::simplify(_in,_simplified,_limit);
           _simplified.update();
 
-          result_type _boundary, _holes;
-          if (!offset_type().withoutFallback(_simplified.boundary(),_bounds,_offset,_boundary,_limit))
+          output_type _boundary, _holes;
+          if (!offset_type().withoutFallback(_simplified.boundary(),_bounds,_s,_boundary,_limit))
           {
             boostPolygonFallback(_simplified,_bounds,_offset,_out,_limit);
             return;
@@ -183,8 +203,8 @@ namespace gex
  
           for (auto& _r : _simplified.holes())
           {
-            result_type _holesBuffer;
-            if (!offset_type().withoutFallback(_r,_bounds,-_offset,_holesBuffer,_limit))
+            output_type _holesBuffer;
+            if (!offset_type().withoutFallback(_r,_bounds,STRATEGY(-_offset),_holesBuffer,_limit))
             {
               boostPolygonFallback(_in,_bounds,_offset,_out,_limit);
               return;
@@ -208,7 +228,7 @@ namespace gex
         void boostPolygonFallback(const prim::Polygon<RING>& _in,
             const BOUNDS& _bounds,
             const OFFSET& _offset, 
-          result_type& _out, 
+          output_type& _out, 
           SCALAR _limit)
         {
           typedef typename RING::point_type point_type;
@@ -226,18 +246,19 @@ namespace gex
       };
 
       template<typename POLYGON>
-      struct Offset<prim::MultiPolygon<POLYGON>>
+      struct Offset<prim::MultiPolygon<POLYGON>,strategy::offset::Default>
       {
-        typedef prim::MultiPolygon<POLYGON> result_type;
+        typedef prim::MultiPolygon<POLYGON> output_type;
 
-        template<typename OFFSET>
-        void operator()(const result_type& _in, const OFFSET& _offset, result_type& _out)
+        template<typename STRATEGY>
+        void operator()(const output_type& _in, STRATEGY _s, output_type& _out)
         {
-          result_type _offsetPolygons;
+          auto& _offset = _s.offset();
+          output_type _offsetPolygons;
           for (auto& _p : _in)
           {
-            result_type _tmp;
-            Offset<POLYGON>()(_p,_offset,_tmp);
+            output_type _tmp;
+            Offset<POLYGON,STRATEGY>()(_p,_s,_tmp);
             _offsetPolygons.insert(_offsetPolygons.end(),_tmp.begin(),_tmp.end()); 
           }
           if (_offset > 0.0)
@@ -252,26 +273,170 @@ namespace gex
           }
         }
       };
-    
-    }
 
-    using functor::Offset;
+      /// NonUniform offset
+      template<typename POINT>
+      struct Offset<prim::Segment<POINT>,strategy::offset::NonUniform<prim::Segment<POINT>>>
+      {
+        typedef POINT point_type;
+        typedef prim::Segment<point_type> segment_type;
+        typedef std::pair<Scalar,Scalar> offset_type;
+        typedef prim::Ring<point_type> output_type;
+       
+        template<typename STRATEGY>
+        void operator()(
+            const segment_type& _seg, 
+            STRATEGY _s,
+            output_type& _ring)
+        {
+          auto&& _offset = _s.offset();
+          _ring.clear();
+          auto _d = (_seg.p1() - _seg.p0()).normalized();
+          Scalar _angle = atan2(_d.y(),_d.x());
 
-    template<typename IN, typename OFFSET, typename OUT>
-    void offset(const IN& _in, const OFFSET& _offset, OUT& _out)
-    {
-      Offset<IN>()(_in,_offset,_out);
-    }
+          Scalar _pi2 = M_PI / 2.0;
+          detail::buildArc(_seg.p0(),_angle+_pi2,_angle+3*_pi2,_offset.first,0.001,_ring);
+          detail::buildArc(_seg.p1(),_angle-_pi2,_angle+_pi2,_offset.second,0.001,_ring);
+          _ring.update();
+        }
+      };
 
-    template<typename IN, typename OFFSET>
-    typename Offset<IN>::result_type offset(const IN& _in, const OFFSET& _offset)
-    {
-      typename Offset<IN>::result_type _out;
-      offset(_in,_offset,_out);
-      return _out;
+      template<typename PRIMITIVE>
+      struct Offset<PRIMITIVE,strategy::offset::MultiDistances>
+      {
+        typedef MultiPolygon output_type;
+
+        template<typename STRATEGY, typename OUTPUT>
+        void operator()(const PRIMITIVE& _primitive, STRATEGY _strategy, OUTPUT& _output)
+        {
+          PRIMITIVE _simplified;
+          if (_strategy.simplify() > 0)
+            gex::algorithm::simplify(_primitive,_simplified,_strategy.simplify());
+          else
+            _simplified = _primitive;
+
+          typename OUTPUT::value_type _perimeters, _out, _offsetPolygons;
+          for (auto& _offset : _strategy.distances())
+          {
+            _offsetPolygons.clear();
+            offset(_simplified,strategy::offset::Default(_offset),_offsetPolygons);
+            std::cout << _offset << std::endl;
+            if (_offsetPolygons.empty()) break;
+            
+            _offsetPolygons.update();
+            _output.push_back(_offsetPolygons);
+          }
+        }
+      };
+
+      template<typename PRIMITIVE>
+      struct Offset<PRIMITIVE,strategy::offset::MultiDistanceNumber>
+      {
+        typedef MultiPolygon output_type;
+        
+        template<typename STRATEGY, typename OUTPUT>
+        void operator()(const PRIMITIVE& _primitive, STRATEGY _strategy, OUTPUT& _output)
+        {
+          PRIMITIVE _simplified;
+          if (_strategy.simplify() > 0)
+            gex::algorithm::simplify(_primitive,_simplified,_strategy.simplify());
+          else
+            _simplified = _primitive;
+          
+          typename OUTPUT::value_type _perimeters, _out, _offsetPolygons;
+
+          if (!_strategy.number())
+          {
+            double _offset = _strategy.offset();
+            while (1)
+            {
+              std::cout << _offset << std::endl;
+              _offsetPolygons.clear();
+              offset(_simplified,strategy::offset::Default(_offset),_offsetPolygons);
+              if (_offsetPolygons.empty()) break;
+
+              _offsetPolygons.update();
+              _output.push_back(_offsetPolygons);
+              _offset += _strategy.distance();
+            }
+          } else
+          {
+            strategy::offset::MultiDistances::set_type _set;
+            for (int i = 0; i < _strategy.number(); i++)
+              _set.insert(i * _strategy.distance() + _strategy.offset());
+            Offset<PRIMITIVE,strategy::offset::MultiDistances>()
+              (_primitive,strategy::offset::MultiDistances(_set,_strategy.simplify()),_output);
+          }
+        }
+      };
+
+      template<typename PRIMITIVE, typename POINT>
+      struct Offset<PRIMITIVE,strategy::offset::MultiWithDetails<POINT>>
+      {
+        typedef MultiPolygon output_type;
+        
+        template<typename STRATEGY, typename OUTPUT>
+        void operator()(const PRIMITIVE& _primitive, STRATEGY _strategy, OUTPUT& _output)
+        {
+          typedef typename STRATEGY::multilinestring_type multilinestring_type;
+          typedef typename STRATEGY::linestring_type linestring_type;
+          typedef typename STRATEGY::indices_type indices_type;
+          output_type _offsetPolygons, _lastPolygons;
+          auto& _width = _strategy.distance();
+
+          if (_primitive.bounds().radius() < _width*2.0)
+          {
+            auto&& _c = gex::centroid(_primitive);
+            linestring_type _ls;
+            _ls.push_back(_c);
+            _ls.push_back(_c);
+            _strategy.details().push_back(_ls);
+            return;
+          }
+
+          for (int i = 0; i < _strategy.number(); i++)
+          {
+            float _offset = -_width*(i+0.5);
+            offset(_primitive,strategy::offset::Default(_offset),_offsetPolygons);
+
+            auto&& _polygons = offset(_primitive,strategy::offset::Default(-_width*i));
+            for (auto& _p : _offsetPolygons)
+              _p.update();
+            for (auto& _p : _polygons)
+              _p.update();
+
+            multilinestring_type _remaining;
+            auto&& _medial_axis = convert<multilinestring_type>(medial_axis(_polygons,gex::strategy::medial_axis::Pruning(_width*0.5)));
+            boost::geometry::correct(_medial_axis);
+            boost::geometry::intersection(_medial_axis,_polygons,_remaining);
+            _medial_axis.clear();
+            join(_remaining,_medial_axis,strategy::join::ThresholdWithReverse(0.001));
+            boost::geometry::correct(_medial_axis);
+            boost::geometry::correct(_offsetPolygons);
+            _remaining.clear();
+            boost::geometry::difference(_medial_axis,_offsetPolygons,_remaining);
+            _medial_axis.clear();
+            boost::geometry::correct(_remaining);
+
+            for (auto& _s : _remaining)
+            {
+              if (gex::sqrDistance(_s.front(),_s.back()) < 0.001 && _s.size() <= 2) continue;
+              _medial_axis.push_back(_s);
+            }
+
+            for (auto& _lineString : _medial_axis)
+              _strategy.details().push_back(_lineString);
+
+            if (_offsetPolygons.empty()) break;
+            
+            _strategy.indices().emplace_back(_output.size(),_output.size()+_offsetPolygons.size());
+            _output.insert(_output.end(),_offsetPolygons.begin(),_offsetPolygons.end());
+
+          }
+        }
+      };
+
     }
   }
-
-  using algorithm::offset; 
 }
 

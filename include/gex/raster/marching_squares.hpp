@@ -133,7 +133,7 @@ namespace gex
           auto&& _segments = marching_squares(_image,_s);
           gex::MultiRing _rings;
 
-          typedef gex::algorithm::strategy::Threshold join_strategy;
+          typedef gex::strategy::join::Threshold join_strategy;
           join(_segments,_rings,join_strategy(0.00001));
           join(_rings,_out,join_strategy(0.00001));
         }

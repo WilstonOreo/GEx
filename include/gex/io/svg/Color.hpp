@@ -55,10 +55,10 @@ namespace gex
         {
           std::stringstream ss;
           ss << "rgba(";
-          ss << 255 * color_type::r() << ",";
-          ss << 255 * color_type::g() << ",";
-          ss << 255 * color_type::b() << ",";
-          ss << 255 * float(color_type::a()) / color_type::max() << ")";
+          ss << int(255 * color_type::r()) << ",";
+          ss << int(255 * color_type::g()) << ",";
+          ss << int(255 * color_type::b()) << ",";
+          ss << int(255 * float(color_type::a()) / color_type::max()) << ")";
           return ss.str();
         }
         
@@ -66,9 +66,9 @@ namespace gex
         {
           std::stringstream ss;
           ss << "rgb(";
-          ss << 255 * color_type::r() << ",";
-          ss << 255 * color_type::g() << ",";
-          ss << 255 * color_type::b() << ")";
+          ss << int(255 * color_type::r()) << ",";
+          ss << int(255 * color_type::g()) << ",";
+          ss << int(255 * color_type::b()) << ")";
           return ss.str();
         }
 

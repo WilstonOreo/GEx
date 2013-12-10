@@ -200,10 +200,6 @@ namespace gex
           return true;
         }
       }
-
-      template<typename PRIMITIVE>
-      struct Offset
-        {};
     }
   }
 }

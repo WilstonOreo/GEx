@@ -4,6 +4,7 @@
 #include <gex/algorithm/centroid.hpp>
 #include <gex/algorithm/perimeter.hpp>
 #include <gex/algorithm/intersection.hpp>
+#include <gex/algorithm/chop.hpp>
 
 namespace gex
 {
@@ -98,24 +99,43 @@ namespace gex
         auto&& _withoutBranches = pruned(_medial_axis,_branchPointers);
         for (auto& _branch : _branches)
         {
+          auto&& _branchLineString = _branch.asLineString();
           if (!_branch.freeEnd())
-            _ls.push_back(_branch.asLineString());
+            _ls.push_back(_branchLineString);
           else
-            for_each<segment_type>(_branch.asLineString(),[&](const segment_type& _segment)
+          {
+            double _length = _factor / gex::perimeter(_branchLineString);
+            if (_length >= 0.5)
             {
-              _withoutBranches.push_back(_segment);
-            });
+              continue;
+            }
+            std::vector<double> _markers({0.0,_length,1.0-_length,1.0});
+            auto&& _lineStrings = chop(_branchLineString,_markers);
+            if (_lineStrings.size() < 2) continue;
+            std::cout << "Chop: " << _lineStrings.size() << std::endl;
+            for (size_t i = 1; i < _lineStrings.size()-1; ++i)
+            {
+              auto& _l = _lineStrings[i];
+              if (gex::perimeter(_l) > _factor / 1000.0) 
+              gex::for_each<gex::Segment>(_l,[&](const segment_type& _segment)
+              {
+                _withoutBranches.push_back(_segment);
+              });
+            }
+          }
         }
 
-        auto&& _offset = gex::offset(_polygon,-_factor);
+        auto&& _offset = gex::offset(_polygon,strategy::offset::Default(-_factor));
         boost::geometry::correct(_offset);
         boost::geometry::correct(_ls);
         boost::geometry::intersection(_offset,_ls,_left);
 
         gex::for_each<gex::Segment>(_left,[&](const segment_type& _segment)
         {
-          _withoutBranches.push_back(_segment);
+          if (gex::distance(_segment.front(),_segment.back()) > _factor / 1000.0) 
+            _withoutBranches.push_back(_segment);
         });
+
         return _withoutBranches;
       }
     }

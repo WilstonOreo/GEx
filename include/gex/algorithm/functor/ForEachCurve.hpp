@@ -11,13 +11,27 @@ namespace gex
     {
       /// For each curve in linestring
       template<typename POINT, bool IS_CONST>
-      struct ForEach<base::Curve<POINT>,prim::LineString<POINT>,IS_CONST>
+      struct ForEach<base::Curve<POINT,IS_CONST>,prim::LineString<POINT>,IS_CONST>
       {
-        typedef base::Curve<POINT> curve_type;
+        typedef base::Curve<POINT,IS_CONST> curve_type;
         typedef prim::LineString<POINT> primitive_type;
 
         template<typename FUNCTOR>
         void operator()(const primitive_type& _lineString, FUNCTOR f)
+        {
+          size_t _i = 0, _n = _lineString.size()-2;
+          while (_i < _n)
+          {
+            auto& _p0 = _lineString[_i];
+            auto& _p1 = _lineString[_i+1];
+            auto& _p2 = _lineString[_i+2];
+            f(curve_type(_p0,_p1,_p2));
+            ++_i;
+          }
+        }
+
+        template<typename FUNCTOR>
+        void operator()(primitive_type& _lineString, FUNCTOR f)
         {
           size_t _i = 0, _n = _lineString.size()-2;
           while (_i < _n)

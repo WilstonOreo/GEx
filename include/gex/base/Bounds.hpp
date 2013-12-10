@@ -64,7 +64,13 @@ namespace gex
          */
         void extend(const Bounds& _that)
         {
-          GEX_ASSERT(valid() && _that.valid());
+          GEX_ASSERT(_that.valid());
+          if (!valid())
+          {
+            min_ = _that.min();
+            max_ = _that.max();
+            return;
+          }
           GEX_FOREACH_DIM(i)
           {
             min_[i] = std::min(_that.min_[i],min_[i]);

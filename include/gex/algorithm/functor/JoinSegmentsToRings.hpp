@@ -8,7 +8,7 @@ namespace gex
     namespace functor
     {
       template<typename POINT>
-      struct Join<prim::MultiSegment<POINT>,prim::MultiRing<POINT>,strategy::DefectRings<POINT>>
+      struct Join<prim::MultiSegment<POINT>,prim::MultiRing<POINT>,strategy::join::DefectRings<POINT>>
       {
         typedef prim::LineString<POINT> linestring_type;
 
@@ -178,7 +178,7 @@ for (auto& _ring : _out) _ring.update();
           typedef NearestResult<PRIMITIVE> nearest_result_type;
           minDist_ = epsilon_;
 
-     //     if (_input.size() < _rtreeNodeSize)
+          if (_input.size() < _rtreeNodeSize)
           {
             for ( const auto& _primitive : _input )
             {
@@ -205,7 +205,7 @@ for (auto& _ring : _out) _ring.update();
               }
             }
           }
-       /*   else
+          else
           {
             namespace bgi = boost::geometry::index;
             typedef std::pair<POINT,PRIMITIVE const*> value;
@@ -242,7 +242,7 @@ for (auto& _prim : _input)
                 _lineStringList.push_back(_lineString);
               }
             }
-          }*/
+          }
 
           epsilon_ =  minDist_+ initialEpsilon_;
           initialEpsilon_ *= 2;

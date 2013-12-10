@@ -9,7 +9,6 @@
 #include <gex/polygon.hpp>
 
 #include "create/circle.hpp"
-#include <gex/algorithm/nonUniformOffset.hpp>
 
 
 template<typename SEGMENTS, typename POLYGON, typename SVG>
@@ -229,9 +228,9 @@ void svgPerimeter(const POLYGON& _polygon, float _factor, float _width, int _num
   for (int i = 0; i < _number; i++)
   {
     float _offset = -_width*(i+0.5);
-    offset(_polygon,_offset,_offsetPolygons);
-    _lastPolygons = offset(_polygon,-_width*(i-1.0));
-    auto&& _polygons = offset(_polygon,-_width*(i));
+    offset(_polygon,strategy::offset::Default(_offset),_offsetPolygons);
+    _lastPolygons = offset(_polygon,strategy::offset::Default(-_width*(i-0.5)));
+    auto&& _polygons = offset(_polygon,strategy::offset::Default(-_width*(i)));
     for (auto& _p : _offsetPolygons)
       _p.update();
     for (auto& _p : _polygons)
@@ -242,13 +241,23 @@ void svgPerimeter(const POLYGON& _polygon, float _factor, float _width, int _num
       _p.update();
 
     gex::MultiLineString _remaining;
-    auto&& _medial_axis = convert<MultiLineString>(medial_axis(!i ? _polygons : _lastPolygons,strategy::medial_axis::Pruning(_width)));
+    auto&& _medial_axis = convert<MultiLineString>(medial_axis(_polygons,strategy::medial_axis::Pruning(_width)));
     //_svg.draw(_medial_axis,"stroke:green;fill:none");
     boost::geometry::correct(_medial_axis);
-    boost::geometry::intersection(_medial_axis,_lastPolygons,_remaining);
+    boost::geometry::intersection(_medial_axis,_polygons,_remaining);
     _medial_axis.clear();
-    boost::geometry::difference(_remaining,_offsetPolygons,_medial_axis);
-    _svg.draw(_medial_axis,"stroke:red;fill:none");
+    join(_remaining,_medial_axis,strategy::join::ThresholdWithReverse(0.001));
+    boost::geometry::correct(_medial_axis);
+    boost::geometry::correct(_offsetPolygons);
+    _remaining.clear();
+    boost::geometry::difference(_medial_axis,_offsetPolygons,_remaining);
+    boost::geometry::correct(_remaining);
+    
+    _svg.draw(_remaining,"stroke:green;fill:none");
+
+    //_medial_axis = _remaining;
+    //_remaining.clear();
+
 
     if (_offsetPolygons.empty()) break;
   }
@@ -265,7 +274,7 @@ void svgThickening(const POLYGON& _polygon, float _factor, float _width, int _nu
   drawPolygon(_polygon,_svg);
   float _offset = -_width*0.5;
 
-  auto&& _offsetPolygons = offset(_polygon,_offset);
+  auto&& _offsetPolygons = offset(_polygon,strategy::offset::Default(_offset));
   for (auto& _p : _offsetPolygons)
       _p.update();
   _svg.draw(_offsetPolygons,"stroke:orange;fill:none");
@@ -279,7 +288,7 @@ void svgThickening(const POLYGON& _polygon, float _factor, float _width, int _nu
   auto _bounds = _polygon.bounds();
 
   MultiLineString _connected;
-  join(_remaining,_connected,algorithm::strategy::ThresholdWithReverse(0.001));
+  join(_remaining,_connected,strategy::join::ThresholdWithReverse(0.001));
 
   MultiLineString _cleaned;
   for (auto& _s : _connected)
@@ -289,7 +298,7 @@ void svgThickening(const POLYGON& _polygon, float _factor, float _width, int _nu
   }
   
   MultiLineString _connectedAll;
-  join(_medial_axis,_connectedAll,algorithm::strategy::ThresholdWithReverse(0.001));
+  join(_medial_axis,_connectedAll,strategy::join::ThresholdWithReverse(0.001));
 
   MultiLineString _cleanedAll;
   for (auto& _s : _connectedAll)
@@ -299,12 +308,12 @@ void svgThickening(const POLYGON& _polygon, float _factor, float _width, int _nu
   }
 
   using namespace boost::polygon::operators;
-  auto&& _thickened = polygon::adapt(offset(_offsetPolygons,_width*0.5),_bounds);
+  auto&& _thickened = polygon::adapt(offset(_polygon,strategy::offset::Default(_width*0.5)),_bounds);
   for (auto& _s : _cleaned)
   {
     for_each<Segment>(_s,[&](const Segment& _segment) 
     {
-      auto&& _offsetPolygon = nonUniformOffset(_segment,std::make_pair(_width,_width));
+      auto&& _offsetPolygon = offset(_segment,strategy::offset::NonUniform<Segment>(std::make_pair(_width,_width)));
       _thickened += polygon::adapt(_offsetPolygon,_bounds);
     });
   }
@@ -346,7 +355,7 @@ int main(int argc, char* argv[])
     svgFinal(_polygon,_factor,_prefix);
 */
     svgPerimeter(_polygon,_factor,_factor,5,_prefix);
-   // svgThickening(_polygon,_factor,_factor,5,_prefix);
+    svgThickening(_polygon,_factor,_factor,5,_prefix);
 
     _number++;
   }

@@ -79,6 +79,12 @@ namespace gex
           max_ = std::max(max_,_range.max());
         }
 
+        void extend(const scalar_type& _s)
+        {
+          min_ = std::min(min_,_s);
+          max_ = std::max(max_,_s);
+        }
+
         friend Range operator+(const Range& _l, scalar_type _r)
         {
           Range _range = _l;

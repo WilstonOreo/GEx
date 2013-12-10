@@ -1,10 +1,10 @@
 #pragma once
 
+#include <gex/index.hpp>
 #include "convert.hpp"
 #include "distance.hpp"
 #include "connect.hpp"
 #include "reverse.hpp"
-#include <gex/index.hpp>
 #include "functor/Join.hpp"
 #include "functor/JoinSegmentsToRings.hpp"
 
@@ -120,8 +120,9 @@ namespace gex
         }
       }
 
+
       template<typename POINT>
-      struct Join<prim::MultiSegment<POINT>,prim::MultiLineString<POINT>,strategy::Threshold>
+      struct Join<prim::MultiSegment<POINT>,prim::MultiLineString<POINT>,strategy::join::Threshold>
       {
         template<typename IN, typename OUT, typename STRATEGY, typename JUNCTION>
         void operator()(const IN& _in, OUT& _out, STRATEGY _strategy, JUNCTION _j)
@@ -144,7 +145,7 @@ namespace gex
       };
       
       template<typename POINT>
-      struct Join<prim::MultiSegment<POINT>,prim::MultiLineString<POINT>,strategy::ThresholdWithReverse>
+      struct Join<prim::MultiSegment<POINT>,prim::MultiLineString<POINT>,strategy::join::ThresholdWithReverse>
       {
         template<typename IN, typename OUT, typename STRATEGY, typename JUNCTION>
         void operator()(const IN& _in, OUT& _out, STRATEGY _strategy, JUNCTION _j)
@@ -202,7 +203,7 @@ namespace gex
 
       /// Join several linestrings to a single one
       template<typename POINT>
-      struct Join<prim::MultiSegment<POINT>,prim::LineString<POINT>,strategy::Simple>
+      struct Join<prim::MultiSegment<POINT>,prim::LineString<POINT>,strategy::join::Simple>
       {
       public:
         template<typename IN, typename OUT, typename STRATEGY, typename JUNCTION_FUNCTOR>

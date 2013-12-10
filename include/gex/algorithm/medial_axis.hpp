@@ -1,42 +1,20 @@
 #pragma once
 
-#include "gex/prim.hpp"
-#include "voronoi.hpp"
+#include <gex/prim.hpp>
+#include <gex/strategy/medial_axis.hpp>
 #include <gex/index.hpp>
+
+#include "voronoi.hpp"
 #include "convert.hpp"
 #include "distance.hpp"
 #include "within.hpp"
 #include "join.hpp"
 #include "closestPoint.hpp"
 #include "boost.hpp"
-#include "nonUniformOffset.hpp"
 
 
 namespace gex
 {
-  namespace strategy
-  {
-    namespace medial_axis
-    {
-      struct Joined {};
-      struct SegmentsOnly {};
-
-      struct ScaleAxis
-      {
-        ScaleAxis(float _s = 1.0) :
-          s_(_s) {}
-        TBD_PROPERTY_RO(float,s)
-      };
-
-      struct Pruning
-      {
-        Pruning(float _factor) :
-          factor_(_factor) {}
-        TBD_PROPERTY_RO(float,factor)
-      };
-    }
-  }
-
   namespace algorithm
   {
     namespace functor
@@ -64,7 +42,6 @@ namespace gex
     }
   }
 }
-
 
 #include "functor/Pruning.hpp"
 
@@ -108,8 +85,7 @@ for (auto& _segment : _segments)
             auto&& _dist0 = distance(_p0,_segment.p0());
             auto&& _dist1 = distance(_p1,_segment.p1());
             _multiPolygon += polygon::adapt(
-                               nonUniformOffset(_segment,
-                                                std::make_pair(_dist0+_s,_dist1+_s)),_bounds);
+                               offset(_segment,gex::strategy::offset::NonUniform<gex::Segment>(std::make_pair(_dist0+_s,_dist1+_s))),_bounds);
           }
           _output = polygon::adapt(_multiPolygon,_bounds);
         }
@@ -142,7 +118,7 @@ for (auto& _segment : _segments)
           typedef typename segment_axis_type::output_type segments_type;
           segments_type _segments;
           segment_axis_type()(_ring,segment_strategy(),_segments);
-          join(_segments,_medial_axis,strategy::ThresholdWithReverse(0.001));
+          join(_segments,_medial_axis,strategy::join::ThresholdWithReverse(0.001));
         }
       };
 
@@ -199,7 +175,7 @@ for (auto& _segment : _segments)
           MedialAxis<gex::Polygon,segment_strategy>()(_polygon,segment_strategy(),_scaleAxis);
 
           _segments = detail::medial_axis_remove_segments_from_voronoi(_ring,_scaleAxis);
-          join(_segments,_medial_axis,strategy::ThresholdWithReverse(0.001));
+          join(_segments,_medial_axis,strategy::join::ThresholdWithReverse(0.001));
         }
       };
 
