@@ -384,7 +384,7 @@ namespace gex
           output_type _offsetPolygons, _lastPolygons;
           auto& _width = _strategy.distance();
 
-          if (_primitive.bounds().radius() < _width*2.0)
+          if (_primitive.bounds().radius() < _width*1.05)
           {
             auto&& _c = gex::centroid(_primitive);
             linestring_type _ls;
@@ -396,6 +396,7 @@ namespace gex
 
           for (int i = 0; i < _strategy.number(); i++)
           {
+            _offsetPolygons.clear();
             float _offset = -_width*(i+0.5);
             offset(_primitive,strategy::offset::Default(_offset),_offsetPolygons);
 

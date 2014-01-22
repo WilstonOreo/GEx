@@ -13,7 +13,6 @@ namespace create
               int _numSegments = 48)
   {
     Ring _ring(_inverse ? Ring::INNER : Ring::OUTER);
-
     for (int i = 1; i <= _numSegments; i++)
     {
       Scalar _angle = Scalar(i)/Scalar(_numSegments)*M_PI*2.0;

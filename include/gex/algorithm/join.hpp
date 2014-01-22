@@ -7,6 +7,7 @@
 #include "reverse.hpp"
 #include "functor/Join.hpp"
 #include "functor/JoinSegmentsToRings.hpp"
+#include "functor/JoinShortestPaths.hpp"
 
 namespace gex
 {

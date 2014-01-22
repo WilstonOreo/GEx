@@ -57,6 +57,52 @@ namespace gex
 
         TBD_PROPERTY_REF(point_type,point)
       };
+
+      template<typename PRIMITIVE>
+      struct ConnectionInfo
+      {
+        typedef PRIMITIVE primitive_type;
+
+        ConnectionInfo() {}
+        ConnectionInfo(size_t _id, primitive_type const* _prim) :
+          id_(_id),
+          primitive_(_prim) {}
+
+        TBD_PROPERTY(size_t,id)
+        TBD_PROPERTY(primitive_type const*,primitive)
+      };
+
+      template<typename POINT, typename PRIMITIVE>
+      struct ShortestPathsWithConnectionInfo : ShortestPaths<POINT>
+      {
+        typedef PRIMITIVE primitive_type;
+        typedef ConnectionInfo<PRIMITIVE> connectioninfo_type;
+        typedef std::vector<connectioninfo_type> info_type; 
+
+        ShortestPathsWithConnectionInfo(const POINT& _point, info_type& _info) : 
+          ShortestPaths<POINT>(_point),
+          info_(_info)
+        {}
+
+        info_type& info()
+        {
+          return info_;
+        }
+
+        info_type const& info() const
+        {
+          return info_;
+        }
+
+        template<typename...ARGS>
+        void insert(ARGS&&..._args)
+        {
+          info_.emplace_back(_args...);
+        }
+
+      private:
+        info_type& info_;
+      };
     }
   }
 }

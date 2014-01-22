@@ -11,6 +11,7 @@ namespace gex
       template<typename POINT, typename BEGIN, typename END, typename FUNCTOR> 
       void for_each_segment_range(BEGIN _begin, END _end, FUNCTOR f)
       {
+        if (_end <= _begin) return;
         auto it = _begin;
         while (it != _end-1)
         {

@@ -4,6 +4,7 @@
 #include <boost/geometry/io/wkt/read.hpp>
 #include "gex/comp.hpp"
 #include "STL.hpp"
+#include "PLY.hpp"
 
 namespace gex
 {
@@ -15,6 +16,15 @@ namespace gex
     {
       if (!STL()(_path,_mesh.triangles())) return false;
       _mesh.update();
+      return true;
+    }
+    
+    /// Read a point cloid from file
+    template<typename PATH, typename SCALAR>
+    bool read(const PATH& _path, comp::PointCloud<SCALAR>& _pointCloud)
+    {
+      if (!PLY<gex::strategy::io::Points3>()(_path,_pointCloud.points())) return false;
+      _pointCloud.update();
       return true;
     }
 

@@ -2,6 +2,7 @@
 
 #include <boost/geometry/algorithms/intersects.hpp>
 #include "gex/prim.hpp"
+#include "for_each.hpp"
 
 namespace gex
 {
@@ -60,6 +61,35 @@ namespace gex
         bool operator()(const scalar_type& _a, const range_type& _b)
         {
           return _a >= _b.min() && _a < _b.max();
+        }
+      };
+
+      template<typename POINT>
+      struct Intersects<prim::LineString<POINT>,prim::Ring<POINT>>
+      {
+        template<typename LINESTRING, typename RING>
+        bool operator()(const LINESTRING& _lineString, const RING& _ring)
+        {
+          using namespace boost::geometry::model;
+          linestring<POINT> _ls(_ring.begin(),_ring.end());
+          return boost::geometry::intersects(_ls,_lineString);
+        }
+      };
+      
+      template<typename POINT, typename RING>
+      struct Intersects<prim::LineString<POINT>,prim::Polygon<RING>>
+      {
+        template<typename LINESTRING, typename POLYGON>
+        bool operator()(const LINESTRING& _lineString, const POLYGON& _polygon)
+        {
+          using namespace boost::geometry::model;
+          bool _result = false;
+          for_each<RING>(_polygon,[&](const RING& _ring)
+          {
+            if (_result) return;
+            _result |= Intersects<LINESTRING,RING>()(_lineString,_ring);       
+          });
+          return _result;
         }
       };
 

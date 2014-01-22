@@ -15,7 +15,7 @@ namespace gex
         template<typename POINT, typename OUTPUT>
         void straight_points(const POINT& _a, const POINT& _b, OUTPUT& _output)
         {
-          if (sqrDistance(_a,_b) > 0.0)
+          if (distance(_a,_b) > 0.0001)
             _output.push_back(_a);
           _output.push_back(_b);
         }
@@ -76,7 +76,6 @@ namespace gex
         template<typename JUNCTION>
         void operator()(const segment_type& _a, const segment_type& _b, output_type& _output, JUNCTION _j)
         {
-          _output.push_back(_a.front());
           JUNCTION(_a,_b,_output);
           _output.push_back(_b.back());
         }
