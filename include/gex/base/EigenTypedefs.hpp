@@ -6,7 +6,6 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
-#include <boost/lexical_cast.hpp>
 
 namespace gex
 {
@@ -64,10 +63,10 @@ namespace gex
       return 
         Eigen::Translation<scalar_type,3>(_c) *
         Eigen::Translation<scalar_type,3>(_off) *
-        Eigen::Scaling(_scale) * 
         Eigen::AngleAxis<scalar_type>(deg2rad(_zDeg),vec_type::UnitZ()) *
         Eigen::AngleAxis<scalar_type>(deg2rad(_yDeg),vec_type::UnitY()) *
         Eigen::AngleAxis<scalar_type>(deg2rad(_xDeg),vec_type::UnitX()) *
+        Eigen::Scaling(_scale) * 
         Eigen::Translation<scalar_type,3>(-_c);
     }
 
@@ -106,30 +105,6 @@ namespace gex
     }
 
     template<typename VEC>
-    void print(std::ostream& _os, const VEC& _v)
-    {
-      _os << '(';
-      for_each_dim(_v,[&_os](const typename VEC::Scalar& _s, size_t i)
-      {
-        _os << _s << ((i < VEC::SizeAtCompileTime-1) ? ',' : ')'); 
-      });
-    }
-
-    template<typename VEC>
-    void parse(std::istream& _is, VEC& _v)
-    {
-      std::vector<std::string> _tokens;
-      tbd::parse(_is,_tokens,"(",")",",",1);
-
-      if (_tokens.size() != VEC::SizeAtCompileTime) return;
-      for_each_dim(_v,[&_tokens](typename VEC::Scalar& _s, size_t i)
-      {
-        std::stringstream _iss(_tokens[i]);
-        _iss >> _s;
-      });
-    }
-
-    template<typename VEC>
     Vec<base::Model<VEC::SizeAtCompileTime-1,typename VEC::Scalar>> 
       project(const VEC& _v, Axis _axis)
     {
@@ -151,7 +126,7 @@ namespace gex
     {
       typedef Vec<base::Model<VEC::SizeAtCompileTime+1,typename VEC::Scalar>> exp_point_type;
       exp_point_type _exp;
-      base::Axis _dim = Axis::X;
+      int _dim = Axis::X;
       gex::base::for_each_dim(_exp,[&](typename VEC::Scalar& _s, size_t i)
       {
         if (i == _axis)
@@ -197,34 +172,6 @@ BOOST_GEOMETRY_DETAIL_SPECIALIZE_POINT_TRAITS(POINT,DIM,SCALAR,cs::cartesian)\
   };\
 }}}
 
-#define GEX_STREAM_OPERATORS(POINT)\
-inline std::ostream& operator<<(std::ostream& _os, const POINT& _p)\
-{\
-  gex::base::print(_os,_p); return _os;\
-}\
-inline std::istream& operator>>(std::istream& _is, POINT& _v)\
-{\
-  gex::base::parse(_is,_v); return _is;\
-}\
-namespace boost\
-{\
-  template<>\
-  inline std::string lexical_cast<std::string, POINT>(const POINT& _v)\
-  {\
-    std::ostringstream ss;\
-    gex::base::print(ss,_v);\
-    return ss.str();\
-  }\
-  template<>\
-  inline POINT lexical_cast<POINT,std::string>(const std::string& _s)\
-  {\
-    POINT _v;\
-    std::istringstream ss(_s);\
-    gex::base::parse(ss,_v);\
-    return _v;\
-  }\
-}
-
 namespace gex
 {
   typedef misc::defaults::ScalarType Scalar;
@@ -250,11 +197,6 @@ namespace gex
   typedef base::Transform3<Scalar> Transform3;
 }
 
-
-
 GEX_REGISTER_POINT(gex::Vec2,2,gex::Scalar)
 GEX_REGISTER_POINT(gex::Vec3,3,gex::Scalar)
 GEX_REGISTER_POINT(gex::Vec4,4,gex::Scalar)
-
-GEX_STREAM_OPERATORS(gex::Vec2)
-GEX_STREAM_OPERATORS(gex::Vec3)

@@ -246,6 +246,24 @@ namespace gex
       }
 
 
+  friend std::ostream& operator<< (std::ostream& os, const Color& _c)
+  {
+    os << _c.r() << " " << _c.g() << " ";
+    os << _c.b() << " ";
+    if (dimensions() == 4) 
+      os << _c.a() << " ";
+    return os;
+  }
+
+  friend std::istream& operator<< (std::istream& is, Color& _c)
+  {
+    is >> _c.r() >> _c.g() >> _c.b();
+    if (dimensions() == 4) 
+      is >> _c.a();
+    return is;
+  }
+
+
       const component_type a(boost::mpl::int_<4>) const
       {
         return a_[3];
@@ -253,42 +271,6 @@ namespace gex
       const component_type a(boost::mpl::int_<3>) const
       {
         return max();
-      }
-
-      template<class OSTREAM>
-      inline OSTREAM& format( OSTREAM& _s ) const
-      {
-        bool _f=true;
-        for( auto& _c : a_ )
-        {
-          if( _f )
-          {
-            _s << "(" << _c;
-            _f = false;
-          }
-          else
-            _s << "," << _c;
-        }
-        _s << ")";
-        return _s;
-      }
-
-      friend std::ostream& operator<<(std::ostream& _os, const Color& _c)
-      {
-        return _c.format(_os);
-      }
-
-      friend std::istream& operator>>(std::istream& _is, Color& _c)
-      {
-        std::vector<std::string> _tokens;
-        tbd::parse(_is,_tokens,"(",")",",",1);
-        if (_tokens.size() != _c.channels()) return _is;
-        for (size_t i = 0; i < _c.channels(); ++i)
-        {
-          std::stringstream _iss(_tokens[i]);
-          _iss >> _c[i];
-        }
-        return _is;
       }
 
     private:

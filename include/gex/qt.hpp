@@ -5,6 +5,7 @@
 #include <QRect>
 #include "base.hpp"
 
+
 namespace gex
 {
   namespace qt
@@ -26,6 +27,7 @@ namespace gex
     
     GEX_QT_ADAPT_TYPE(gex::Bounds2,QRectF)
     GEX_QT_ADAPT_TYPE(QRectF,gex::Bounds2)
+
 
     template<typename PRIMITIVE>
     void adapt(const PRIMITIVE& _in, typename AdaptType<PRIMITIVE>::type& _out)

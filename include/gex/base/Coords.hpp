@@ -150,50 +150,6 @@ namespace gex
         return *this;
       }
 
-      operator std::string() const
-      {
-        std::stringstream ss;
-        format(ss);
-        return ss.str();
-      }
-
-      template<class OSTREAM>
-      inline OSTREAM& format( OSTREAM& _s ) const
-      {
-        bool _f=true;
-        for( auto& _c : data() )
-        {
-          if( _f )
-          {
-            _s << "(" << _c;
-            _f = false;
-          }
-          else
-            _s << "," << _c;
-        }
-        _s << ")";
-        return _s;
-      }
-
-      friend std::ostream& operator<<(std::ostream& _os, const Coords& _c)
-      {
-        return _c.format(_os);
-      }
-
-      friend std::istream& operator>>(std::istream& _is, Coords& _c)
-      {
-        std::vector<std::string> _tokens;
-        tbd::parse(_is,_tokens,"(",")",",",1);
-        if (_tokens.size() != _c.size()) return _is;
-        GEX_FOREACH_DIM(i) 
-        {
-          std::stringstream _iss(_tokens[i]);
-          _iss >> _c[i];
-        }
-        return _is;
-      }
-
-
       friend bool operator == ( const Coords& _a, const Coords& _b)
       {
         GEX_FOREACH_DIM(i) if (_a[i] != _b[i]) return false;
@@ -217,14 +173,6 @@ namespace gex
 
 #define COORDS(C) C.x(),C.y(),C.z()
   }
-}
-
-
-template<typename OSTREAM, typename MODEL>
-inline OSTREAM& operator<<( OSTREAM& _s, const gex::base::Coords<MODEL>& _p )
-{
-  _p.format(_s);
-  return _s;
 }
 
 #endif /* _COORD_HPP */

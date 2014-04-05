@@ -20,7 +20,6 @@ namespace gex
 #include <boost/geometry/extensions/strategies/buffer_end_round.hpp>
 #include "functor/Offset.hpp"
 #include <gex/strategy/offset.hpp>
-#include <boost/geometry/extensions/algorithms/remove_spikes.hpp>
 #include "medial_axis.hpp"
 
 

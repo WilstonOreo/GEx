@@ -42,7 +42,7 @@ namespace gex
                         Buffer& _buffer)
         {
           typedef prim::LineString<POINT> linestring_type;
-          for_each<linestring_type>(_multilineString,[](const linestring_type& _lineString)
+          for_each<linestring_type>(_multilineString,[&](const linestring_type& _lineString)
           {
             Draw<linestring_type>(_lineString,_style,_buffer);
           });
